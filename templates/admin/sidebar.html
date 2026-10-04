@@ -1,0 +1,18 @@
+{% extends "base_console.html" %}
+{% block sidebar %}
+<div class="menu-group">
+<div class="menu-group-title">平台管理</div>
+<a href="/admin" class="menu-item {% if active == 'overview' %}active{% endif %}"> 平台总览</a>
+<a href="/admin/merchants" class="menu-item {% if active == 'merchants' %}active{% endif %}"> 商户入驻审核</a>
+<a href="/admin/farmstays" class="menu-item {% if active == 'farmstays' %}active{% endif %}"> 农旅内容管理</a>
+<a href="/admin/products" class="menu-item {% if active == 'products' %}active{% endif %}"> 特产资源管理</a>
+<a href="/admin/reviews" class="menu-item {% if active == 'reviews' %}active{% endif %}"> 评价审核管理</a>
+<a href="/admin/orders" class="menu-item {% if active == 'orders' %}active{% endif %}"> 订单·物流总览</a>
+<a href="/admin/banners" class="menu-item {% if active == 'banners' %}active{% endif %}"> 首页运营配置</a>
+<a href="/admin/notices" class="menu-item {% if active == 'notices' %}active{% endif %}"> 系统公告管理</a>
+</div>
+<div class="menu-group">
+<div class="menu-group-title">系统管理</div>
+<a href="/admin/users" class="menu-item {% if active == 'users' %}active{% endif %}"> 用户账号管理</a>
+</div>
+{% endblock %}

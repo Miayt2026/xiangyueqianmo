@@ -1,0 +1,18 @@
+{% extends "base_console.html" %}
+{% block sidebar %}
+<div class="menu-group">
+<div class="menu-group-title">经营管理</div>
+<a href="/merchant" class="menu-item {% if active == 'dashboard' %}active{% endif %}"> 商户工作台</a>
+<a href="/merchant/shop" class="menu-item {% if active == 'shop' %}active{% endif %}"> 店铺信息管理</a>
+<a href="/merchant/projects" class="menu-item {% if active == 'projects' %}active{% endif %}"> 农旅项目管理</a>
+<a href="/merchant/rooms" class="menu-item {% if active == 'rooms' %}active{% endif %}"> 房型住宿管理</a>
+<a href="/merchant/products" class="menu-item {% if active == 'products' %}active{% endif %}"> 特产商品管理</a>
+<a href="/merchant/bookings" class="menu-item {% if active == 'bookings' %}active{% endif %}"> 预约订单管理</a>
+<a href="/merchant/orders" class="menu-item {% if active == 'orders' %}active{% endif %}"> 特产订单·物流</a>
+<a href="/merchant/reviews" class="menu-item {% if active == 'reviews' %}active{% endif %}"> 用户评价管理</a>
+</div>
+<div class="menu-group">
+<div class="menu-group-title">AI 创新功能</div>
+<a href="/merchant/ai" class="menu-item {% if active == 'ai' %}active{% endif %}"> AI 经营助手</a>
+</div>
+{% endblock %}

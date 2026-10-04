@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}农旅资源 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title"> 乡村农旅资源</h1>
+<p class="page-subtitle">找农家乐、采摘园、研学基地，从田野到山间的美好体验</p>
+
+<!-- 筛选栏 -->
+<div class="card" style="padding:14px;">
+<form action="/farmstays" method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+<input type="text" name="keyword" value="{{ keyword }}" class="form-control" placeholder="搜索名称/标签" style="max-width:200px;">
+<select name="region" class="form-control" style="max-width:220px;">
+<option value="">全部地区</option>
+{% for rg in regions %}
+<option value="{{ rg.value }}" {% if region == rg.value %}selected{% endif %}>{{ rg.label }}</option>
+{% endfor %}
+</select>
+<select name="category" class="form-control" style="max-width:160px;">
+<option value="">全部类型</option>
+{% for c in categories %}
+<option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>
+{% endfor %}
+</select>
+<select name="sort" class="form-control" style="max-width:150px;">
+<option value="">默认排序</option>
+<option value="score" {% if sort == 'score' %}selected{% endif %}>好评优先</option>
+<option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>价格从低到高</option>
+<option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>价格从高到低</option>
+</select>
+<button type="submit" class="btn btn-primary">筛选</button>
+<a href="/farmstays" class="btn btn-outline">重置</a>
+</form>
+</div>
+
+<!-- 列表 -->
+{% if rows %}
+<div class="grid" style="margin-top:16px;">
+{% for fs in rows %}
+<a href="/farmstay/{{ fs['id'] }}" class="item-card" style="text-decoration:none;">
+<img class="item-img" src="{{ url_for('static', filename='images/' + (fs['image'] or 'farm_default.jpg')) }}" alt="{{ fs['name'] }}">
+<div class="item-body">
+<div class="item-name" style="color:var(--text);">{{ fs['name'] }}</div>
+<div class="item-sub"> {{ fs['region'] }} · {{ fs['address'] }}</div>
+<div class="item-meta">
+<span class="item-price">¥{{ '%.0f' % fs['price_min'] }}<small>起</small></span>
+<span class="tag-star">⭐ {{ fs['score'] }}</span>
+</div>
+<div>
+{% for t in (fs['tags'] or '').split(',')[:3] %}
+{% if t %}<span class="tag">{{ t }}</span>{% endif %}
+{% endfor %}
+</div>
+</div>
+</a>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>没有找到符合条件的农旅资源，换个条件试试～</p></div>
+{% endif %}
+{% endblock %}

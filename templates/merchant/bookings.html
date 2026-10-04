@@ -1,0 +1,45 @@
+{% extends "base_console.html" %}
+{% block title %}预约订单管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "merchant/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 预约订单管理</h1>
+
+<div class="card">
+<div class="card-title">全部预约（{{ rows|length }}）</div>
+{% if rows %}
+<table class="table">
+<thead><tr><th>预约编号</th><th>游客</th><th>点位</th><th>日期</th><th>人数</th><th>电话</th><th>备注</th><th>加购</th><th>状态</th><th>操作</th></tr></thead>
+<tbody>
+{% for b in rows %}
+<tr>
+<td style="font-size:13px;">{{ b['booking_no'] }}</td>
+<td>{{ b['username'] }}</td>
+<td>{{ b['farmstay_name'] }}</td>
+<td>{{ b['visit_date'] }}</td>
+<td>{{ b['people'] }}人</td>
+<td>{{ b['phone'] }}</td>
+<td style="font-size:13px;max-width:150px;">{{ b['remark'] or '—' }}</td>
+<td>{% if b['add_product'] %} 是{% else %}否{% endif %}</td>
+<td><span class="tag {{ 'tag-orange' if b['status']=='待审核' else '' }}">{{ b['status'] }}</span></td>
+<td>
+<form action="/merchant/booking/update" method="post">
+<input type="hidden" name="booking_id" value="{{ b['id'] }}">
+<select name="status" class="form-control" style="display:inline-block;width:100px;padding:4px;font-size:13px;">
+<option value="待审核" {% if b['status']=='待审核' %}selected{% endif %}>待审核</option>
+<option value="已确认" {% if b['status']=='已确认' %}selected{% endif %}>已确认</option>
+<option value="已驳回" {% if b['status']=='已驳回' %}selected{% endif %}>已驳回</option>
+<option value="已完成" {% if b['status']=='已完成' %}selected{% endif %}>已完成</option>
+<option value="已取消" {% if b['status']=='已取消' %}selected{% endif %}>已取消</option>
+</select>
+<button type="submit" class="btn btn-outline btn-sm">更新</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p style="color:var(--text2);">暂无预约订单</p>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}AI出行规划 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title">AI 出行规划</h1>
+<p class="page-subtitle">用一句话告诉AI您的出行想法，自动识别目的地、天数、预算与兴趣，定制乡村行程</p>
+
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+
+<!-- 左侧：出行需求填写 -->
+<div class="card" style="width:340px;flex-shrink:0;">
+<div style="font-size:15px;font-weight:700;color:var(--text);">告诉AI您的出行想法</div>
+<form method="post" id="ai-form">
+<div style="margin-top:10px;">
+<textarea name="user_input" class="form-control" rows="3"
+placeholder="例如：周末带父母去北京郊区玩2天，预算800元，喜欢采摘和民宿"
+style="resize:vertical;min-height:72px;">{{ user_input }}</textarea>
+<div style="font-size:12px;color:var(--text2);margin-top:6px;">
+提示：可直接输入<u>目的地、天数、预算、兴趣</u>，AI 会自动识别；也可勾选下方选项微调。</div>
+</div>
+
+<hr style="border:none;border-top:1px dashed var(--border);margin:12px 0;">
+
+<div style="font-size:13px;color:var(--text2);">目的地（省份）</div>
+<select name="region" class="form-control" style="margin-top:4px;">
+<option value="不限" {% if picked == '不限' %}selected{% endif %}>不限，可全国推荐</option>
+{% for r in regions %}
+<option value="{{ r }}" {% if r == picked %}selected{% endif %}>{{ r }}</option>
+{% endfor %}
+</select>
+<div style="font-size:12px;color:var(--text2);margin-top:4px;">也可在上方自由文本中直接输入目的地</div>
+
+<div style="margin-top:12px;font-size:13px;color:var(--text2);">出行天数</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('days');i.value=Math.max(1,+i.value-1);">-</button>
+<input id="days" name="days" value="{{ days }}" style="width:50px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;" readonly>
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('days');i.value=Math.min(10,+i.value+1);">+</button>
+</div>
+
+<div style="margin-top:12px;font-size:13px;color:var(--text2);">出行人数</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('people');i.value=Math.max(1,+i.value-1);">-</button>
+<input id="people" name="people" value="{{ people }}" style="width:50px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;" readonly>
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('people');i.value=Math.min(50,+i.value+1);">+</button>
+</div>
+
+<div style="margin-top:12px;font-size:13px;color:var(--text2);">人均预算（元，0为不限）</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('budget');i.value=Math.max(0,+i.value-100);">-</button>
+<input id="budget" name="budget" value="{{ budget }}" style="width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;" readonly>
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('budget');i.value=Math.min(5000,+i.value+100);">+</button>
+</div>
+
+<div style="margin-top:12px;font-size:13px;color:var(--text2);">兴趣偏好（可多选）</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+{% for it in ['采摘','亲子','研学','团建','民宿','非遗','草原','梯田','美食','康养','星空','露营','古镇','山水'] %}
+<label class="chk-label {{ 'checked' if it in interests else '' }}">
+<input type="checkbox" name="interests" value="{{ it }}" {{ 'checked' if it in interests else '' }} style="display:none;" onchange="this.parentElement.classList.toggle('checked',this.checked);">
+{{ it }}
+</label>
+{% endfor %}
+</div>
+
+<button type="submit" class="btn btn-orange btn-block" style="margin-top:12px;">生成我的行程</button>
+</form>
+</div>
+
+<!-- 右侧：AI 规划结果 -->
+<div style="flex:1;min-width:320px;">
+{% if result %}
+<div class="card" style="background:var(--green-bg);">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<div style="font-size:15px;font-weight:700;color:var(--green-dark);">AI 规划结果</div>
+<button class="btn btn-sm btn-outline" style="margin-left:auto;color:var(--green-dark);border-color:var(--green);"
+        onclick="var el=document.getElementById('ai-result-text');navigator.clipboard.writeText(el.innerText);this.textContent='已复制';setTimeout(function(){this.textContent='复制规划结果';}.bind(this),1500);">复制规划结果</button>
+</div>
+<div id="ai-result-text" style="font-size:14px;line-height:1.9;white-space:pre-wrap;margin-top:8px;">{{ result }}</div>
+</div>
+{% endif %}
+
+{% if spots %}
+<div style="margin-top:18px;">
+<div style="font-size:15px;font-weight:700;color:var(--green-dark);margin-bottom:10px;">推荐商户 · {{ picked }}</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;">
+{% for sp in spots %}
+<a href="/farmstay/{{ sp['id'] }}" class="card" style="text-decoration:none;margin:0;display:block;">
+<img src="{{ url_for('static', filename='images/' + (sp['image'] or 'farm_default.jpg')) }}"
+     style="width:100%;height:110px;object-fit:cover;border-radius:10px;display:block;"
+     onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div style="padding:10px 2px 0;">
+<div style="font-size:15px;font-weight:700;color:var(--text);">{{ sp['name'] }}</div>
+<div style="font-size:12px;color:var(--text2);margin:3px 0;">{{ sp['region'] }}</div>
+<div style="font-size:12px;color:var(--text2);">{{ (sp['description'] or '')[:40] }}…</div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">
+{% for t in (sp['tags'] or '').split(',')[:3] %}
+{% if t %}<span class="tag">{{ t }}</span>{% endif %}
+{% endfor %}
+<span style="color:var(--orange);font-weight:800;margin-left:auto;">¥{{ '%.0f' % (sp['price_min'] or 0) }}起</span>
+</div>
+<span class="btn btn-primary btn-sm" style="display:block;text-align:center;margin-top:8px;">查看详情</span>
+</div>
+</a>
+{% endfor %}
+</div>
+{% if hot %}
+<div style="margin-top:16px;background:#fff;border:1px solid var(--green);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+<div style="font-size:13px;font-weight:700;color:var(--green-dark);">随机推荐 · 最符合您的项目</div>
+<a href="/farmstay/{{ hot['id'] }}" style="display:flex;gap:12px;align-items:center;flex:1;min-width:240px;text-decoration:none;color:var(--text);">
+<img src="{{ url_for('static', filename='images/' + (hot['image'] or 'farm_default.jpg')) }}" style="width:70px;height:56px;border-radius:8px;object-fit:cover;" onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div>
+<div style="font-size:14px;font-weight:700;">{{ hot['name'] }}</div>
+<div style="font-size:12px;color:var(--text2);">{{ hot['region'] }} · ¥{{ '%.0f' % (hot['price_min'] or 0) }}起/人</div>
+</div>
+<span class="btn btn-sm btn-primary">去看看</span>
+</a>
+</div>
+{% endif %}
+<p style="font-size:12px;color:var(--text2);margin-top:8px;">注：农旅点位为虚构演示数据，配图来自网络图库，仅用于比赛演示。</p>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}

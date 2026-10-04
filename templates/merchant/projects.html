@@ -1,0 +1,91 @@
+{% extends "base_console.html" %}
+{% block title %}农旅项目管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "merchant/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 农旅项目管理</h1>
+
+<div class="card">
+<div class="card-title">＋ 新增农旅项目</div>
+<form action="/merchant/project/add" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<div style="min-width:180px;">
+<div class="ai-input-label">所属点位</div>
+<select name="farmstay_id" class="form-control" required>
+{% for f in farmstays %}
+<option value="{{ f['id'] }}">{{ f['name'] }}</option>
+{% endfor %}
+</select>
+</div>
+<div style="flex:1;min-width:160px;">
+<div class="ai-input-label">项目名称</div>
+<input type="text" name="name" class="form-control" required placeholder="如：苹果采摘">
+</div>
+<div style="min-width:110px;">
+<div class="ai-input-label">价格</div>
+<input type="number" name="price" class="form-control" step="0.1" min="0" required placeholder="如 39">
+</div>
+<div style="min-width:100px;">
+<div class="ai-input-label">单位</div>
+<input type="text" name="unit" class="form-control" value="人/次">
+</div>
+<div style="flex:1;min-width:150px;">
+<div class="ai-input-label">开放时间</div>
+<input type="text" name="open_time" class="form-control" value="08:00-18:00">
+</div>
+<button type="submit" class="btn btn-primary">添加</button>
+</form>
+</div>
+
+<div class="card">
+<div class="card-title">项目列表（{{ projects|length }}）</div>
+<table class="table">
+<thead><tr><th>点位</th><th>项目</th><th>价格</th><th>开放时间</th><th>状态</th><th>操作</th></tr></thead>
+<tbody>
+{% for item in projects %}
+<tr>
+<td>{{ item['fs']['name'] }}</td>
+<td>{{ item['pj']['name'] }}</td>
+<td style="color:var(--orange);font-weight:600;">¥{{ '%.1f' % item['pj']['price'] }}/{{ item['pj']['unit'] }}</td>
+<td style="font-size:13px;">{{ item['pj']['open_time'] }}</td>
+<td>{{ item['pj']['status'] }}</td>
+<td style="white-space:nowrap;">
+<form action="/merchant/project/update" method="post" style="display:inline-flex;gap:6px;">
+<input type="hidden" name="project_id" value="{{ item['pj']['id'] }}">
+<select name="status" class="form-control" style="display:inline-block;width:80px;padding:4px;font-size:13px;">
+<option value="上架" {% if item['pj']['status']=='上架' %}selected{% endif %}>上架</option>
+<option value="下架" {% if item['pj']['status']=='下架' %}selected{% endif %}>下架</option>
+</select>
+<button type="submit" class="btn btn-outline btn-sm">状态</button>
+</form>
+<button class="btn btn-outline btn-sm" onclick="var e=document.getElementById('edit-project-{{ item['pj']['id'] }}');e.style.display=e.style.display==='none'?'table-row':'none';">编辑</button>
+<form action="/merchant/project/delete" method="post" style="display:inline;" onsubmit="return confirm('确定删除项目「{{ item['pj']['name'] }}」吗？');">
+<input type="hidden" name="project_id" value="{{ item['pj']['id'] }}">
+<button type="submit" class="btn btn-danger btn-sm">删除</button>
+</form>
+</td>
+</tr>
+<tr id="edit-project-{{ item['pj']['id'] }}" style="display:none;">
+<td colspan="6" style="background:var(--green-bg);">
+<form action="/merchant/project/edit" method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+<input type="hidden" name="project_id" value="{{ item['pj']['id'] }}">
+<select name="farmstay_id" class="form-control" style="min-width:150px;">
+{% for f in farmstays %}
+<option value="{{ f['id'] }}" {% if item['pj']['farmstay_id']==f['id'] %}selected{% endif %}>{{ f['name'] }}</option>
+{% endfor %}
+</select>
+<input name="name" class="form-control" value="{{ item['pj']['name'] }}" required style="flex:1;min-width:130px;">
+<input name="price" class="form-control" type="number" step="0.1" min="0" value="{{ item['pj']['price'] }}" style="min-width:90px;">
+<input name="unit" class="form-control" value="{{ item['pj']['unit'] }}" style="min-width:70px;">
+<input name="open_time" class="form-control" value="{{ item['pj']['open_time'] }}" style="flex:1;min-width:120px;">
+<select name="status" class="form-control" style="min-width:80px;">
+<option value="上架" {% if item['pj']['status']=='上架' %}selected{% endif %}>上架</option>
+<option value="下架" {% if item['pj']['status']=='下架' %}selected{% endif %}>下架</option>
+</select>
+<button type="submit" class="btn btn-primary btn-sm">保存修改</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

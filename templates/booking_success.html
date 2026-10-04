@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}预约成功 - 乡约阡陌{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px;margin:0 auto;text-align:center;">
+<div style="font-size:48px;"></div>
+<h1 class="page-title" style="text-align:center;">预约申请已提交</h1>
+<p style="font-size:15px;margin:10px 0;">您的预约编号：</p>
+<div style="font-size:26px;font-weight:700;color:var(--green-dark);letter-spacing:2px;background:var(--green-bg);border-radius:8px;padding:12px;margin:10px 0;">
+{{ booking_no }}
+</div>
+<p style="font-size:14px;color:var(--text2);">请等待商户审核确认，可在「个人中心-我的预约」查看状态。</p>
+
+<!-- AI 出行备忘录 -->
+<div class="ai-module" style="text-align:left;margin-top:16px;">
+<div class="ai-title"> AI 出行备忘录</div>
+<div class="ai-box">{{ memo }}</div>
+</div>
+
+<a href="/farmstay/{{ fs['id'] }}" class="btn btn-outline" style="margin-top:8px;">返回农家乐</a>
+<a href="/my/bookings" class="btn btn-primary">查看我的预约</a>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}闲置资源共享 - 乡约阡陌{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+<div>
+<h1 class="page-title" style="margin-bottom:4px;"> 乡村闲置资源共享</h1>
+<p class="page-subtitle" style="margin:0;">农具 · 农房 · 用工 · 土地，AI 智能匹配供需，让乡村资源活起来</p>
+</div>
+{% if user %}
+<a href="/resource/publish" class="btn btn-orange">＋ 发布资源</a>
+{% else %}
+<a href="/login" class="btn btn-outline btn-sm">登录后发布资源</a>
+{% endif %}
+</div>
+
+<!-- 搜索栏（参考图7：关键词+类型+省份） -->
+<div style="margin:16px 0 12px;background:var(--green-bg);border:1px solid rgba(39,174,96,.25);border-radius:12px;padding:14px 16px;">
+<form action="/resources" method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<div style="flex:1;min-width:200px;">
+<div class="ai-input-label">关键词</div>
+<input type="text" name="keyword" class="form-control" value="{{ keyword }}" placeholder="如：播种机 / 找临时工 / 闲置农房">
+</div>
+<div style="min-width:150px;">
+<div class="ai-input-label">资源类型</div>
+<select name="rtype" class="form-control">
+<option value="">全部类型</option>
+{% for rt in ['闲置农具','闲置农房','临时用工','土地流转'] %}
+<option value="{{ rt }}" {% if rtype == rt %}selected{% endif %}>{{ rt }}</option>
+{% endfor %}
+</select>
+</div>
+<div style="min-width:150px;">
+<div class="ai-input-label">所在省份</div>
+<select name="region" class="form-control">
+<option value="">全部省份</option>
+{% for rv in region_opts %}
+<option value="{{ rv }}" {% if region == rv %}selected{% endif %}>{{ rv }}</option>
+{% endfor %}
+</select>
+</div>
+<button type="submit" class="btn btn-primary">搜索</button>
+</form>
+</div>
+
+<!-- AI 智能匹配入口 -->
+<div class="ai-module" style="margin-bottom:14px;">
+<div class="ai-title"> AI 智能资源匹配</div>
+<form action="/resource/match" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<div style="flex:1;min-width:220px;">
+<div class="ai-input-label">描述您的需求</div>
+<input type="text" name="need" class="form-control" placeholder="如：想租一台小型播种机 / 采摘季找临时工" required>
+</div>
+<div style="min-width:160px;">
+<div class="ai-input-label">所在地区</div>
+<input type="text" name="region" class="form-control" placeholder="如：河北省-保定市-涞源县">
+</div>
+<button type="submit" class="btn btn-orange">AI 匹配</button>
+</form>
+{% if match_result %}
+<div class="ai-box">{{ match_result }}</div>
+{% endif %}
+</div>
+
+<!-- 分类 Tab -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px;">
+<a href="/resources" class="btn btn-sm {{ 'btn-primary' if not rtype else 'btn-outline' }}">全部</a>
+{% for rt in ['闲置农具','闲置农房','临时用工','土地流转'] %}
+<a href="/resources?rtype={{ rt }}" class="btn btn-sm {{ 'btn-primary' if rtype == rt else 'btn-outline' }}">{{ rt }}</a>
+{% endfor %}
+</div>
+
+{% if rows %}
+<div class="grid grid-4">
+{% for r in rows %}
+<a href="/resource/{{ r['id'] }}" class="item-card" style="text-decoration:none;overflow:hidden;padding:0;">
+<img src="{{ url_for('static', filename='images/' + (r['image'] or 'farm_default.jpg')) }}" alt="{{ r['title'] }}"
+style="width:100%;height:130px;object-fit:cover;display:block;border-radius:10px 10px 0 0;"
+onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div class="item-body">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<span class="tag {{ 'tag-orange' if r['rtype'] == '临时用工' else '' }}">{{ r['rtype'] }}</span>
+<span style="font-size:12px;color:var(--text2);">{{ r['region'] }}</span>
+</div>
+<div class="item-name" style="margin-top:6px;color:var(--text);">{{ r['title'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;min-height:38px;">{{ (r['description'] or '')[:44] }}{% if (r['description'] or '')|length > 44 %}...{% endif %}</div>
+<div class="item-meta" style="margin-top:8px;">
+<span class="item-price">¥{{ '%.0f' % r['price'] }}<small>起</small></span>
+<span style="font-size:12px;color:var(--text2);">发布：{{ r['username'] }}</span>
+</div>
+</div>
+</a>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>暂无相关资源，发布一条帮到更多人～</p></div>
+{% endif %}
+{% endblock %}

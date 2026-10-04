@@ -1,0 +1,77 @@
+{% extends "base_console.html" %}
+{% block title %}特产资源管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 特产资源管理</h1>
+
+<div class="card">
+<div class="card-title" style="display:flex;align-items:center;gap:10px;">
+<span>全部特产（{{ rows|length }}，含下架）</span>
+<button class="btn btn-sm btn-primary" style="margin-left:auto;" onclick="var e=document.getElementById('add-product-form');e.style.display=e.style.display==='none'?'block':'none';this.textContent=this.textContent==='新增特产'?'收起新增':'新增特产';">新增特产</button>
+</div>
+<div id="add-product-form" style="display:none;border:1px dashed var(--green);border-radius:10px;padding:14px;margin-bottom:14px;">
+<div style="font-size:14px;font-weight:700;color:var(--green-dark);margin-bottom:10px;">新增特产</div>
+<form action="/admin/product/add" method="post" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+<input name="name" class="form-control" placeholder="特产名称 *" required>
+<input name="origin" class="form-control" placeholder="产地，如：河北张家口崇礼">
+<input name="price" class="form-control" type="number" min="0" step="0.01" placeholder="价格（元）">
+<input name="unit" class="form-control" placeholder="单位，如：斤/份/箱">
+<input name="stock" class="form-control" type="number" min="0" placeholder="库存">
+<input name="trace_code" class="form-control" placeholder="溯源码，如 XYQM1101（自动生成二维码）">
+<input name="farmstay_id" class="form-control" type="number" min="1" placeholder="所属农家乐ID（默认1）">
+<input name="image" class="form-control" placeholder="图片文件名，如 potato.jpg">
+<textarea name="description" class="form-control" rows="2" placeholder="特产简介"></textarea>
+<button type="submit" class="btn btn-primary" style="align-self:end;">保存新增</button>
+</form>
+</div>
+<table class="table">
+<thead><tr><th>ID</th><th>商品</th><th>产地</th><th>价格</th><th>库存</th><th>溯源码</th><th>状态</th><th>操作</th></tr></thead>
+<tbody>
+{% for p in rows %}
+<tr>
+<td>{{ p['id'] }}</td>
+<td><a href="/product/{{ p['id'] }}" target="_blank">{{ p['name'] }}</a></td>
+<td>{{ p['origin'] }}</td>
+<td style="color:var(--orange);font-weight:600;">¥{{ '%.1f' % p['price'] }}/{{ p['unit'] }}</td>
+<td>{{ p['stock'] }}</td>
+<td style="font-size:13px;">{{ p['trace_code'] or '—' }}</td>
+<td>{{ p['status'] }}</td>
+<td style="white-space:nowrap;">
+<form action="/admin/product/update" method="post" style="display:inline-flex;gap:6px;">
+<input type="hidden" name="product_id" value="{{ p['id'] }}">
+<select name="status" class="form-control" style="display:inline-block;width:80px;padding:4px;font-size:13px;">
+<option value="上架" {% if p['status']=='上架' %}selected{% endif %}>上架</option>
+<option value="下架" {% if p['status']=='下架' %}selected{% endif %}>下架</option>
+</select>
+<button type="submit" class="btn btn-outline btn-sm">状态</button>
+</form>
+<button class="btn btn-outline btn-sm" onclick="var e=document.getElementById('edit-product-{{ p['id'] }}');e.style.display=e.style.display==='none'?'table-row':'none';">编辑</button>
+<form action="/admin/product/delete" method="post" style="display:inline;" onsubmit="return confirm('确定删除特产「{{ p['name'] }}」吗？');">
+<input type="hidden" name="product_id" value="{{ p['id'] }}">
+<button type="submit" class="btn btn-danger btn-sm">删除</button>
+</form>
+</td>
+</tr>
+<tr id="edit-product-{{ p['id'] }}" style="display:none;">
+<td colspan="8" style="background:var(--green-bg);">
+<form action="/admin/product/edit" method="post" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;">
+<input type="hidden" name="product_id" value="{{ p['id'] }}">
+<input name="name" class="form-control" value="{{ p['name'] }}" required>
+<input name="origin" class="form-control" value="{{ p['origin'] }}">
+<input name="price" class="form-control" type="number" min="0" step="0.01" value="{{ p['price'] }}">
+<input name="unit" class="form-control" value="{{ p['unit'] or '' }}">
+<input name="stock" class="form-control" type="number" min="0" value="{{ p['stock'] }}">
+<select name="status" class="form-control">
+<option value="上架" {% if p['status']=='上架' %}selected{% endif %}>上架</option>
+<option value="下架" {% if p['status']=='下架' %}selected{% endif %}>下架</option>
+</select>
+<textarea name="description" class="form-control" rows="2" placeholder="简介">{{ p['description'] or '' }}</textarea>
+<button type="submit" class="btn btn-primary" style="align-self:end;">保存修改</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

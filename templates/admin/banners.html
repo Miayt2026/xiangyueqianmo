@@ -1,0 +1,47 @@
+{% extends "base_console.html" %}
+{% block title %}首页运营配置 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 首页运营配置（轮播图）</h1>
+
+<div class="card">
+<div class="card-title">＋ 添加轮播图</div>
+<form action="/admin/banners" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<div style="flex:1;min-width:200px;">
+<div class="ai-input-label">标题</div>
+<input type="text" name="title" class="form-control" required placeholder="如：金秋丰收季 助农采摘节">
+</div>
+<div style="min-width:160px;">
+<div class="ai-input-label">图片文件名</div>
+<select name="image" class="form-control">
+<option value="banner1.jpg">banner1.jpg</option>
+<option value="banner2.jpg">banner2.jpg</option>
+<option value="banner3.jpg">banner3.jpg</option>
+</select>
+</div>
+<div style="flex:1;min-width:150px;">
+<div class="ai-input-label">跳转链接</div>
+<input type="text" name="link" class="form-control" value="/" placeholder="/farmstays 或 /products">
+</div>
+<button type="submit" class="btn btn-primary">添加</button>
+</form>
+</div>
+
+<div class="card">
+<div class="card-title">当前轮播配置（{{ rows|length }}）</div>
+<table class="table">
+<thead><tr><th>ID</th><th>标题</th><th>图片</th><th>链接</th><th>预览</th></tr></thead>
+<tbody>
+{% for b in rows %}
+<tr>
+<td>{{ b['id'] }}</td>
+<td>{{ b['title'] }}</td>
+<td>{{ b['image'] }}</td>
+<td>{{ b['link'] }}</td>
+<td><img src="{{ url_for('static', filename='images/' + b['image']) }}" style="width:80px;height:36px;object-fit:cover;border-radius:4px;"></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

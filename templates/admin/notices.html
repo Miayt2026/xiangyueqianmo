@@ -1,0 +1,50 @@
+{% extends "base_console.html" %}
+{% block title %}公告管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 系统公告管理</h1>
+<p class="page-subtitle">发布与管理首页轮播图下方的系统公告</p>
+
+<div class="card" style="margin-bottom:16px;">
+<div class="card-title"> 发布新公告</div>
+<form action="/admin/notice/add" method="post" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+<div style="flex:1;min-width:200px;">
+<label style="display:block;font-size:13px;color:var(--text2);margin-bottom:4px;">公告标题</label>
+<input type="text" name="title" class="form-control" required placeholder="例如：国庆假期服务提示">
+</div>
+<div style="flex:2;min-width:320px;">
+<label style="display:block;font-size:13px;color:var(--text2);margin-bottom:4px;">公告内容</label>
+<input type="text" name="content" class="form-control" required placeholder="请输入公告内容">
+</div>
+<button type="submit" class="btn btn-primary">发布公告</button>
+</form>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+<table class="table">
+<thead><tr><th>标题</th><th>内容</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
+<tbody>
+{% for n in rows %}
+<tr>
+<td style="font-weight:600;">{{ n['title'] }}</td>
+<td style="font-size:13px;color:var(--text2);">{{ n['content'] }}</td>
+<td><span class="tag {{ 'tag-orange' if n['status']=='停用' else '' }}">{{ n['status'] }}</span></td>
+<td style="font-size:13px;color:var(--text2);">{{ n['created_at'] }}</td>
+<td style="white-space:nowrap;">
+<form action="/admin/notice/toggle" method="post" style="display:inline;">
+<input type="hidden" name="notice_id" value="{{ n['id'] }}">
+<input type="hidden" name="status" value="{{ '启用' if n['status']=='停用' else '停用' }}">
+<button type="submit" class="btn btn-outline btn-sm">{{ '启用' if n['status']=='停用' else '停用' }}</button>
+</form>
+<form action="/admin/notice/delete" method="post" style="display:inline;">
+<input type="hidden" name="notice_id" value="{{ n['id'] }}">
+<button type="submit" class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c9c4;"
+onclick="return confirm('确认删除该公告？')">删除</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

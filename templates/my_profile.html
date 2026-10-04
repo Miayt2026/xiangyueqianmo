@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}个人中心 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title"> 个人中心</h1>
+
+<div style="display:flex;gap:20px;flex-wrap:wrap;">
+<!-- 左侧：账号信息卡（参考图9） -->
+<div style="width:300px;flex-shrink:0;">
+<div class="card" style="text-align:center;padding:26px 20px;">
+<div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#27ae60,#1e8a4a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;margin:0 auto;">{{ (user['username'] or '友')[0] }}</div>
+<div style="font-size:18px;font-weight:800;color:var(--green-dark);margin-top:12px;">{{ user['username'] }}</div>
+<div style="font-size:12px;color:#fff;background:var(--green);border-radius:999px;display:inline-block;padding:2px 12px;margin-top:6px;">{{ {'0':'游客','1':'商户','3':'平台管理员'}[user['role']|string] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:12px;line-height:1.9;">
+注册时间：{{ (user['created_at'] or '')[:10] }}<br>
+手机号：{{ user['phone'] or '未填写' }}<br>
+所在地区：{{ user['region'] or '未填写' }}
+</div>
+</div>
+
+<!-- 编辑资料 -->
+<div class="card">
+<div class="card-title"> 编辑资料</div>
+<form action="/my/profile" method="post">
+<div class="form-group"><label>手机号</label>
+<input type="text" name="phone" class="form-control" value="{{ user['phone'] }}"></div>
+<div class="form-group"><label>所在地区</label>
+<input type="text" name="region" class="form-control" value="{{ user['region'] }}" placeholder="如：河北省-张家口市-崇礼区"></div>
+<button type="submit" class="btn btn-primary btn-block">保存修改</button>
+</form>
+</div>
+</div>
+
+<!-- 右侧 -->
+<div style="flex:1;min-width:300px;">
+<!-- 数据统计（参考图9：预约/意向单/收藏/评价） -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;">
+<a href="/my/profile?tab=bookings" class="item-card" style="text-decoration:none;text-align:center;padding:18px 10px;">
+<div style="font-size:26px;font-weight:800;color:var(--green-dark);">{{ stats['bookings'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">我的预约</div>
+</a>
+<a href="/my/profile?tab=orders" class="item-card" style="text-decoration:none;text-align:center;padding:18px 10px;">
+<div style="font-size:26px;font-weight:800;color:var(--green-dark);">{{ stats['orders'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">我的意向单</div>
+</a>
+<a href="/my/profile?tab=favorites" class="item-card" style="text-decoration:none;text-align:center;padding:18px 10px;">
+<div style="font-size:26px;font-weight:800;color:var(--green-dark);">{{ stats['favorites'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">我的收藏</div>
+</a>
+<a href="/my/profile?tab=reviews" class="item-card" style="text-decoration:none;text-align:center;padding:18px 10px;">
+<div style="font-size:26px;font-weight:800;color:var(--green-dark);">{{ stats['reviews'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">我的评价</div>
+</a>
+</div>
+
+<!-- Tab 导航（参考图9） -->
+<div class="card">
+<div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:14px;">
+{% set tabs = [('bookings','我的预约'),('orders','我的意向单'),('intents','对接意向'),('favorites','我的收藏'),('reviews','我的评价'),('ai','AI出行偏好')] %}
+{% for key, label in tabs %}
+<a href="/my/profile?tab={{ key }}" class="btn btn-sm {{ 'btn-primary' if tab == key else 'btn-outline' }}" style="text-decoration:none;">{{ label }}</a>
+{% endfor %}
+</div>
+
+{% if tab == 'bookings' %}
+{% if bookings %}
+{% for b in bookings %}
+<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+<b>{{ b['farmstay_name'] }}</b>
+<span class="tag {{ 'tag-orange' if b['status']=='待审核' else '' }}">{{ b['status'] }}</span>
+</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">{{ b['visit_date'] }} ｜ {{ b['people'] }}人 ｜ {{ b['booking_no'] }}</div>
+<div style="margin-top:6px;">
+{% if b['status'] != '已取消' %}
+<form action="/booking/{{ b['id'] }}/cancel" method="post" style="display:inline;" onsubmit="return confirm('确定取消该预约吗？');">
+<button type="submit" class="btn btn-outline btn-sm" style="border-color:#e0a0a0;color:#c0564a;">取消预约</button>
+</form>
+{% endif %}
+<a href="/farmstay/{{ b['farmstay_id'] }}" class="btn btn-primary btn-sm" style="text-decoration:none;">查看农旅点</a>
+</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>暂无预约，去发现乡村好去处吧～</p>
+<a href="/farmstays" class="btn btn-primary" style="margin-top:10px;">去逛逛</a></div>
+{% endif %}
+{% elif tab == 'orders' %}
+{% if bookings and false %}
+{% else %}
+<div style="text-align:center;padding:26px 10px;">
+<div style="width:64px;height:64px;border-radius:14px;background:var(--green-bg);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--green);">单</div>
+<p style="font-size:14px;color:var(--text2);margin-top:12px;">意向单即您在平台的购买意向与订单记录</p>
+<a href="/my/orders" class="btn btn-primary" style="text-decoration:none;margin-top:6px;">查看我的订单</a>
+<a href="/cart" class="btn btn-outline" style="text-decoration:none;margin-top:6px;color:var(--green-dark);border-color:var(--green);">去购物车结算</a>
+</div>
+{% endif %}
+{% elif tab == 'intents' %}
+{% if intents %}
+{% for i in intents %}
+<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+<a href="/resource/{{ i['resource_id'] }}" style="font-weight:700;color:var(--text);text-decoration:none;">{{ i['title'] }}</a>
+<span class="tag">{{ i['status'] }}</span>
+</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">{{ i['rtype'] }} · {{ i['region'] }} · ¥{{ '%.0f' % i['price'] }}起 · {{ (i['created_at'] or '')[:10] }}</div>
+{% if i['message'] %}<div style="font-size:13px;color:var(--text);margin-top:4px;">留言：{{ i['message'] }}</div>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>暂无对接意向，去闲置资源广场逛逛～</p>
+<a href="/resources" class="btn btn-primary" style="margin-top:10px;">去资源广场</a></div>
+{% endif %}
+{% elif tab == 'favorites' %}
+{% if favorites %}
+{% for f in favorites %}
+<a href="{{ f[3] }}" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);text-decoration:none;">
+<div>
+<div style="font-weight:600;color:var(--text);">{{ f[1] }}</div>
+<div style="font-size:12px;color:var(--text2);margin-top:2px;"><span class="tag">{{ f[0] }}</span> {{ f[2] }}</div>
+</div>
+<span style="color:var(--green);font-size:13px;">查看 →</span>
+</a>
+{% endfor %}
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>还没有收藏，遇到心仪的农旅点或特产就收藏吧～</p>
+<a href="/farmstays" class="btn btn-primary" style="margin-top:10px;">去逛逛</a></div>
+{% endif %}
+{% elif tab == 'reviews' %}
+{% if reviews %}
+{% for r in reviews %}
+<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+<div style="font-size:13px;color:var(--text2);"><span style="color:#e6a23c;">{{ '★' * r['rating'] }}</span> · {{ r['created_at'] }}</div>
+<div style="font-size:14px;margin-top:4px;">{{ r['content'] }}</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>还没有评价，体验后分享您的乡村故事～</p>
+<a href="/farmstays" class="btn btn-primary" style="margin-top:10px;">去逛逛</a></div>
+{% endif %}
+{% elif tab == 'ai' %}
+<div style="text-align:center;padding:26px 10px;">
+<div style="width:64px;height:64px;border-radius:14px;background:var(--green-bg);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--green);">AI</div>
+<p style="font-size:14px;color:var(--text2);margin-top:12px;">AI 出行规划 · AI 资源匹配 · AI 风物科普</p>
+<a href="/ai_travel" class="btn btn-primary" style="text-decoration:none;margin-top:6px;">去 AI 出行规划</a>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}AI规划行程 · {{ fs['name'] }} - 乡约阡陌{% endblock %}
+{% block content %}
+<a href="/farmstay/{{ fs['id'] }}" style="font-size:14px;">← 返回{{ fs['name'] }}详情</a>
+
+<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;">
+
+<!-- 左侧：农旅点信息 + 规划条件 -->
+<div style="width:330px;flex-shrink:0;">
+<div class="card">
+<img src="{{ url_for('static', filename='images/' + (fs['image'] or 'farm_default.jpg')) }}" style="width:100%;height:170px;border-radius:10px;object-fit:cover;" onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div style="font-size:18px;font-weight:800;color:var(--green-dark);margin-top:10px;">{{ fs['name'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">{{ fs['region'] }} · {{ fs['category'] }} · 评分{{ fs['score'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">¥{{ '%.0f' % (fs['price_min'] or 0) }}起/人 · {{ fs['views'] }}次浏览</div>
+</div>
+
+<div class="card">
+<div style="font-size:15px;font-weight:700;color:var(--text);">为此地定制攻略</div>
+<form method="post">
+<div style="margin-top:12px;font-size:13px;color:var(--text2);">出行天数</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('days');i.value=Math.max(1,+i.value-1);">-</button>
+<input id="days" name="days" value="{{ days }}" style="width:50px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;" readonly>
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('days');i.value=Math.min(7,+i.value+1);">+</button>
+<span style="font-size:12px;color:var(--text2);">1-7天</span>
+</div>
+<div style="margin-top:10px;font-size:13px;color:var(--text2);">出行人数</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('people');i.value=Math.max(1,+i.value-1);">-</button>
+<input id="people" name="people" value="{{ people }}" style="width:50px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;" readonly>
+<button type="button" class="btn btn-sm btn-outline" onclick="var i=document.getElementById('people');i.value=Math.min(20,+i.value+1);">+</button>
+</div>
+<div style="margin-top:10px;font-size:13px;color:var(--text2);">兴趣偏好（可多选）</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+{% for it in ['采摘','亲子','研学','美食','非遗','康养','星空','露营'] %}
+<label class="chk-label {{ 'checked' if it in interests else '' }}">
+<input type="checkbox" name="interests" value="{{ it }}" {{ 'checked' if it in interests else '' }} style="display:none;" onchange="this.parentElement.classList.toggle('checked',this.checked);">
+{{ it }}
+</label>
+{% endfor %}
+</div>
+<button type="submit" class="btn btn-orange btn-block" style="margin-top:14px;">生成此地攻略</button>
+</form>
+</div>
+</div>
+
+<!-- 右侧：攻略结果 + 时令 -->
+<div style="flex:1;min-width:320px;">
+{% if result %}
+<div class="card" style="background:var(--green-bg);">
+<div style="font-size:15px;font-weight:700;color:var(--green-dark);">AI 攻略结果 · {{ fs['name'] }}</div>
+<div style="font-size:14px;line-height:1.9;white-space:pre-wrap;margin-top:8px;">{{ result }}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+<a href="/farmstay/{{ fs['id'] }}?tab=projects" class="btn btn-sm btn-primary" style="text-decoration:none;">查看体验项目</a>
+<a href="/farmstay/{{ fs['id'] }}?tab=rooms" class="btn btn-sm btn-outline" style="text-decoration:none;color:var(--green-dark);border-color:var(--green);">查看房型</a>
+<a href="/farmstay/{{ fs['id'] }}?tab=products" class="btn btn-sm btn-outline" style="text-decoration:none;color:var(--green-dark);border-color:var(--green);">在线买特产</a>
+<a href="/booking?farmstay_id={{ fs['id'] }}" class="btn btn-sm btn-orange" style="text-decoration:none;">立即预约</a>
+</div>
+</div>
+{% else %}
+<div class="card" style="background:var(--green-bg);">
+<div style="font-size:15px;font-weight:700;color:var(--green-dark);">在这里怎么玩？</div>
+<p style="font-size:14px;line-height:1.9;margin-top:8px;color:var(--text2);">
+选择左侧的天数、人数与兴趣偏好，AI 将基于此地真实登记的项目、房型与特产，
+为您编排一份专属攻略：能玩什么、吃什么、怎么住、买什么带回家。
+</p>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:12px;">
+{% for m in months %}
+<div class="card" style="margin:0;">
+<div style="font-size:13px;font-weight:700;color:var(--green-dark);">{{ m['month'] }} · {{ m['jq'] }}</div>
+<div style="font-size:13px;color:var(--text);margin-top:6px;">{{ m['work'] }}</div>
+<div style="font-size:12px;color:var(--orange);margin-top:4px;">当季果蔬：{{ m['fruit'] }}</div>
+</div>
+{% endfor %}
+</div>
+<div style="font-size:13px;color:var(--text2);margin-top:10px;">当地地理标志：{{ geo|join(' · ') }}</div>
+</div>
+</div>
+{% endblock %}

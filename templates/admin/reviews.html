@@ -1,0 +1,45 @@
+{% extends "base_console.html" %}
+{% block title %}评价审核管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 评价审核管理</h1>
+
+<div class="ai-module">
+<div class="ai-title"> AI 用户评价检测</div>
+<form action="/admin/audit_ai" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<div style="flex:1;min-width:260px;">
+<div class="ai-input-label">输入待检测文本</div>
+<input type="text" name="text" class="form-control" required placeholder="输入评价/文案内容进行合规检测">
+</div>
+<button type="submit" class="btn btn-primary"> AI 检测</button>
+</form>
+</div>
+
+<div class="card">
+<div class="card-title">全部评价（{{ rows|length }}）</div>
+{% if rows %}
+{% for r in rows %}
+<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+<div style="font-size:13px;color:var(--text2);">
+{{ r['farmstay_name'] }} · {{ r['username'] }} · {{ '★' * r['rating'] }} · {{ r['created_at'] }}
+</div>
+<div style="font-size:14px;margin-top:4px;">{{ r['content'] }}</div>
+{% if r['reply'] %}
+<div style="font-size:13px;color:var(--green-dark);margin-top:4px;">商户回复：{{ r['reply'] }}</div>
+{% endif %}
+<form action="/admin/review/update" method="post" style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+<input type="hidden" name="review_id" value="{{ r['id'] }}">
+<span style="font-size:13px;color:var(--text2);">审核状态：{{ r['status'] }}</span>
+<select name="status" class="form-control" style="display:inline-block;width:90px;padding:4px;font-size:13px;">
+<option value="正常" {% if r['status']=='正常' %}selected{% endif %}>正常</option>
+<option value="隐藏" {% if r['status']=='隐藏' %}selected{% endif %}>隐藏</option>
+</select>
+<button type="submit" class="btn btn-outline btn-sm">更新</button>
+</form>
+</div>
+{% endfor %}
+{% else %}
+<p style="color:var(--text2);">暂无评价</p>
+{% endif %}
+</div>
+{% endblock %}

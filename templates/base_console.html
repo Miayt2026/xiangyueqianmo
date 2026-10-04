@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}乡约阡陌{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="console-body">
+<!-- 顶部导航栏 -->
+<nav class="topbar">
+<div class="topbar-inner">
+<button class="hamburger" id="hamburger" aria-label="菜单">☰</button>
+<a href="/" class="logo"> 乡约阡陌</a>
+<div class="topbar-links">
+<span class="user-badge">{{ user['username'] }} · {{ {'0':'游客','1':'商户','3':'平台管理员'}[user['role']|string] }}</span>
+<a href="/" class="btn btn-outline btn-sm">返回门户</a>
+<a href="/logout" class="btn btn-outline btn-sm">退出</a>
+</div>
+</div>
+</nav>
+
+<div class="console-wrap">
+<!-- 左侧侧边栏 -->
+<aside class="sidebar" id="sidebar">
+{% block sidebar %}{% endblock %}
+</aside>
+
+<!-- 主内容区 -->
+<div class="console-main">
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="flash flash-{{ category }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+{% block content %}{% endblock %}
+</div>
+</div>
+
+<script>
+// 手机端汉堡菜单开合侧边栏
+var btn = document.getElementById('hamburger');
+var sb = document.getElementById('sidebar');
+if (btn && sb) {
+btn.addEventListener('click', function () {
+sb.classList.toggle('open');
+});
+}
+</script>
+</body>
+</html>

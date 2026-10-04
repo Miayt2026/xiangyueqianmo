@@ -1,0 +1,108 @@
+{% extends "base_console.html" %}
+{% block title %}商户工作台 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "merchant/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 商户工作台</h1>
+<p class="page-subtitle">欢迎回来，{{ user['shop_name'] or user['username'] }}！</p>
+
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-num">{{ stats['farmstays'] }}</div><div class="stat-label">经营点位</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['projects'] }}</div><div class="stat-label">农旅项目</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['rooms'] }}</div><div class="stat-label">房型</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['products'] }}</div><div class="stat-label">在售特产</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['bookings'] }}</div><div class="stat-label">总预约</div></div>
+<div class="stat-card"><div class="stat-num" style="color:var(--orange);">{{ stats['pending'] }}</div><div class="stat-label">待审核预约</div></div>
+</div>
+
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-num">{{ order_stats.get('待发货', 0) }}</div><div class="stat-label">待发货订单</div></div>
+<div class="stat-card"><div class="stat-num">{{ order_stats.get('已发货', 0) }}</div><div class="stat-label">已发货订单</div></div>
+<div class="stat-card"><div class="stat-num">{{ order_stats.get('已签收', 0) }}</div><div class="stat-label">已签收订单</div></div>
+<div class="stat-card"><div class="stat-num">{{ order_stats.values()|sum }}</div><div class="stat-label">特产订单总数</div></div>
+</div>
+
+<!-- 经营可视化 -->
+<div class="card">
+<div class="card-title"> 经营数据可视化</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+<div style="flex:1;min-width:280px;height:260px;" id="chartOrder"></div>
+<div style="flex:1;min-width:280px;height:260px;" id="chartBooking"></div>
+<div style="flex:1;min-width:280px;height:260px;" id="chartTrend"></div>
+</div>
+<p style="font-size:12px;color:var(--text2);margin-top:6px;">图表基于当前演示数据实时生成，发货后可看到状态变化。</p>
+</div>
+
+<div class="card">
+<div class="card-title"> 最新预约</div>
+{% if bookings %}
+<table class="table">
+<thead><tr><th>预约编号</th><th>点位</th><th>日期</th><th>人数</th><th>电话</th><th>状态</th></tr></thead>
+<tbody>
+{% for b in bookings %}
+<tr>
+<td style="font-size:13px;">{{ b['booking_no'] }}</td>
+<td>{{ b['farmstay_name'] }}</td>
+<td>{{ b['visit_date'] }}</td>
+<td>{{ b['people'] }}人</td>
+<td>{{ b['phone'] }}</td>
+<td><span class="tag {{ 'tag-orange' if b['status']=='待审核' else '' }}">{{ b['status'] }}</span></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<a href="/merchant/bookings" class="btn btn-outline btn-sm" style="margin-top:10px;">管理全部预约 →</a>
+{% else %}
+<p style="color:var(--text2);">暂无预约记录</p>
+{% endif %}
+</div>
+
+<div class="ai-module">
+<div class="ai-title"> AI 经营助手推荐</div>
+<p style="font-size:14px;color:var(--text2);">使用 AI 生成宣传文案、节气活动策划、评价智能分析，轻松经营。</p>
+<a href="/merchant/ai" class="btn btn-primary" style="margin-top:8px;">进入 AI 经营助手</a>
+</div>
+<script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
+<script>
+(function(){
+  function initChart(el, opt){
+    var dom = document.getElementById(el);
+    if (!dom || typeof echarts === 'undefined') return;
+    var chart = echarts.init(dom);
+    chart.setOption(opt);
+  }
+  var orderStats = {{ order_stats|tojson }};
+  initChart('chartOrder', {
+    title: {text: '特产订单状态分布', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'item'},
+    series: [{
+      type: 'pie', radius: '62%', center: ['50%', '55%'],
+      label: {formatter: '{b}: {c}'},
+      data: Object.keys(orderStats).map(function(k){ return {name: k, value: orderStats[k]}; })
+    }]
+  });
+  var bookingStats = {{ booking_stats|tojson }};
+  initChart('chartBooking', {
+    title: {text: '预约状态分布', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'axis'},
+    graphic: Object.keys(bookingStats).length ? [] : [{
+      type: 'text', left: 'center', top: 'middle',
+      style: {text: '暂无预约数据', fill: '#999', fontSize: 14}
+    }],
+    grid: {left: 40, right: 20, top: 40, bottom: 30},
+    xAxis: {type: 'category', data: Object.keys(bookingStats)},
+    yAxis: {type: 'value', minInterval: 1},
+    series: [{type: 'bar', barWidth: '52%', itemStyle: {color: '#27AE60'}, data: Object.values(bookingStats)}]
+  });
+  var trend = {{ trend|tojson }};
+  initChart('chartTrend', {
+    title: {text: '近7日订单趋势', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'axis'},
+    grid: {left: 40, right: 20, top: 40, bottom: 30},
+    xAxis: {type: 'category', data: Object.keys(trend)},
+    yAxis: {type: 'value', minInterval: 1},
+    series: [{type: 'line', smooth: true, areaStyle: {}, itemStyle: {color: '#F2994A'}, data: Object.values(trend)}]
+  });
+})();
+</script>
+
+{% endblock %}

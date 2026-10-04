@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}我的收藏 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title">⭐ 我的收藏</h1>
+{% if items %}
+<div class="grid grid-4">
+{% for itype, name, sub, link in items %}
+<a href="{{ link }}" class="item-card" style="text-decoration:none;">
+<div class="item-body" style="min-height:90px;justify-content:center;">
+<div style="font-size:22px;">{{ '' if itype=='农家乐' else '' }}</div>
+<div class="item-name" style="color:var(--text);margin-top:6px;">{{ name }}</div>
+<div class="item-sub">{{ itype }} · {{ sub }}</div>
+</div>
+</a>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="empty-icon">⭐</div><p>还没有收藏内容</p></div>
+{% endif %}
+{% endblock %}

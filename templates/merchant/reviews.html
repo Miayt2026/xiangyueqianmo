@@ -1,0 +1,30 @@
+{% extends "base_console.html" %}
+{% block title %}用户评价管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "merchant/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 用户评价管理</h1>
+
+<div class="card">
+<div class="card-title">全部评价（{{ rows|length }}）</div>
+{% if rows %}
+{% for r in rows %}
+<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+<div style="font-size:13px;color:var(--text2);">
+{{ r['farmstay_name'] }} · {{ r['username'] }} · {{ '★' * r['rating'] }} · {{ r['created_at'] }}
+</div>
+<div style="font-size:14px;margin-top:4px;">{{ r['content'] }}</div>
+{% if r['reply'] %}
+<div style="font-size:13px;color:var(--green-dark);margin-top:4px;">我的回复：{{ r['reply'] }}</div>
+{% endif %}
+<form action="/merchant/review/reply" method="post" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+<input type="hidden" name="review_id" value="{{ r['id'] }}">
+<input type="text" name="reply" class="form-control" placeholder="回复该评价..." style="flex:1;min-width:200px;max-width:420px;" value="{{ r['reply'] }}">
+<button type="submit" class="btn btn-outline btn-sm">回复</button>
+</form>
+</div>
+{% endfor %}
+{% else %}
+<p style="color:var(--text2);">暂无评价</p>
+{% endif %}
+</div>
+{% endblock %}

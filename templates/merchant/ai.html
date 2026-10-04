@@ -1,0 +1,77 @@
+{% extends "base_console.html" %}
+{% block title %}AI经营助手 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "merchant/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> AI 经营助手</h1>
+<p class="page-subtitle">文案生成 · 节气策划 · 评价分析，AI 助力乡村经营</p>
+
+<!-- 文案生成 -->
+<div class="ai-module">
+<div class="ai-title"> AIGC 多场景宣传文案生成</div>
+<form action="/merchant/ai" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<input type="hidden" name="mode" value="copy">
+<div style="flex:1;min-width:220px;">
+<div class="ai-input-label">关键词</div>
+<input type="text" name="keywords" class="form-control" required placeholder="如：苹果采摘 亲子 助农 山景">
+</div>
+<div style="min-width:140px;">
+<div class="ai-input-label">用途</div>
+<select name="scene" class="form-control">
+<option value="店铺简介">店铺简介</option>
+<option value="朋友圈宣传">朋友圈宣传</option>
+<option value="亲子游推介">亲子游推介</option>
+</select>
+</div>
+<button type="submit" class="btn btn-primary">生成</button>
+</form>
+{% if result and request.form.get('mode') == 'copy' %}
+<div class="ai-box">{{ result }}</div>
+<button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText);this.textContent='已复制';">复制</button>
+{% endif %}
+</div>
+
+<!-- 节气活动策划 -->
+<div class="ai-module">
+<div class="ai-title"> 节气主题活动策划</div>
+<form action="/merchant/ai" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<input type="hidden" name="mode" value="festival">
+<div style="min-width:150px;">
+<div class="ai-input-label">节气/季节</div>
+<select name="season" class="form-control" required>
+<option value="春分">春分</option><option value="清明">清明</option>
+<option value="谷雨">谷雨</option><option value="立夏">立夏</option>
+<option value="芒种">芒种</option><option value="夏至">夏至</option>
+<option value="立秋">立秋</option><option value="秋分">秋分</option>
+<option value="霜降">霜降</option><option value="冬季">冬季</option>
+<option value="春节">春节</option>
+</select>
+</div>
+<div style="flex:1;min-width:200px;">
+<div class="ai-input-label">店铺信息（选填）</div>
+<input type="text" name="shop_info" class="form-control" placeholder="如：青山农家乐（采摘+民宿）">
+</div>
+<button type="submit" class="btn btn-primary">策划活动</button>
+</form>
+{% if result and request.form.get('mode') == 'festival' %}
+<div class="ai-box">{{ result }}</div>
+<button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText);this.textContent='已复制';">复制</button>
+{% endif %}
+</div>
+
+<!-- 评价智能分析 -->
+<div class="ai-module">
+<div class="ai-title"> 评价智能分析</div>
+<form action="/merchant/ai" method="post">
+<input type="hidden" name="mode" value="review">
+<div class="form-group">
+<div class="ai-input-label">粘贴游客评价（可多段）</div>
+<textarea name="reviews_text" class="form-control" rows="4" required placeholder="把游客评价粘贴到这里，AI 提取关键词并给出经营改进建议"></textarea>
+</div>
+<button type="submit" class="btn btn-primary"> 智能分析</button>
+</form>
+{% if result and request.form.get('mode') == 'review' %}
+<div class="ai-box">{{ result }}</div>
+<button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText);this.textContent='已复制';">复制</button>
+{% endif %}
+</div>
+{% endblock %}

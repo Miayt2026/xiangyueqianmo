@@ -1,0 +1,86 @@
+{% extends "base_console.html" %}
+{% block title %}平台总览 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 平台总览</h1>
+<p class="page-subtitle">全平台数据一屏掌握</p>
+
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-num">{{ stats['users'] }}</div><div class="stat-label">注册用户</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['merchants'] }}</div><div class="stat-label">入驻商户</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['pending_merchants'] }}</div><div class="stat-label">待审商户</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['farmstays'] }}</div><div class="stat-label">农旅点位</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['products'] }}</div><div class="stat-label">特产商品</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['bookings'] }}</div><div class="stat-label">累计预约</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['reviews'] }}</div><div class="stat-label">累计评价</div></div>
+<div class="stat-card"><div class="stat-num">{{ stats['resources'] }}</div><div class="stat-label">闲置资源</div></div>
+</div>
+
+<!-- 平台可视化 -->
+<div class="card">
+<div class="card-title"> 平台数据可视化</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+<div style="flex:1;min-width:280px;height:270px;" id="chartRole"></div>
+<div style="flex:1;min-width:280px;height:270px;" id="chartCat"></div>
+<div style="flex:1;min-width:280px;height:270px;" id="chartOrder"></div>
+<div style="flex:1;min-width:280px;height:270px;" id="chartTrend"></div>
+<div style="flex:1;min-width:280px;height:270px;" id="chartBooking"></div>
+</div>
+<p style="font-size:12px;color:var(--text2);margin-top:6px;">图表基于当前演示数据实时生成，涵盖用户角色、农旅分类、订单状态与预约分布。</p>
+</div>
+
+<script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
+<script>
+(function(){
+  function initChart(el, opt){
+    var dom = document.getElementById(el);
+    if (!dom || typeof echarts === 'undefined') return;
+    echarts.init(dom).setOption(opt);
+  }
+  var roleStats = {{ role_stats|tojson }};
+  var roleNames = {'0': '游客', '1': '商户', '3': '平台管理员'};
+  initChart('chartRole', {
+    title: {text: '用户角色分布', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'item'},
+    series: [{type: 'pie', radius: '62%', center: ['50%', '55%'],
+      label: {formatter: '{b}: {c}'},
+      data: Object.keys(roleStats).map(function(k){ return {name: roleNames[k] || k, value: roleStats[k]}; })}]
+  });
+  var catStats = {{ cat_stats|tojson }};
+  initChart('chartCat', {
+    title: {text: '农旅点位分类', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'axis'},
+    grid: {left: 46, right: 20, top: 40, bottom: 40},
+    xAxis: {type: 'category', data: Object.keys(catStats), axisLabel: {rotate: 20, fontSize: 11}},
+    yAxis: {type: 'value', minInterval: 1},
+    series: [{type: 'bar', barWidth: '45%', itemStyle: {color: '#27AE60'}, data: Object.values(catStats)}]
+  });
+  var orderStats = {{ order_stats|tojson }};
+  initChart('chartOrder', {
+    title: {text: '订单状态分布', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'item'},
+    series: [{type: 'pie', radius: '62%', center: ['50%', '55%'],
+      label: {formatter: '{b}: {c}'},
+      data: Object.keys(orderStats).map(function(k){ return {name: k, value: orderStats[k]}; })}]
+  });
+  var trend = {{ trend|tojson }};
+  initChart('chartTrend', {
+    title: {text: '近7日订单趋势', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'axis'},
+    grid: {left: 40, right: 20, top: 40, bottom: 30},
+    xAxis: {type: 'category', data: Object.keys(trend)},
+    yAxis: {type: 'value', minInterval: 1},
+    series: [{type: 'line', smooth: true, areaStyle: {}, itemStyle: {color: '#F2994A'}, data: Object.values(trend)}]
+  });
+  var bookingStats = {{ booking_stats|tojson }};
+  initChart('chartBooking', {
+    title: {text: '预约状态分布', left: 'center', textStyle: {fontSize: 14}},
+    tooltip: {trigger: 'item'},
+    series: [{type: 'pie', radius: '62%', center: ['50%', '55%'],
+      label: {formatter: '{b}: {c}'},
+      data: Object.keys(bookingStats).map(function(k){ return {name: k, value: bookingStats[k]}; })}]
+  });
+})();
+</script>
+
+{% endblock %}

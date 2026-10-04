@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ r['title'] }} - 乡约阡陌{% endblock %}
+{% block content %}
+<a href="/resources" style="font-size:14px;">← 返回资源列表</a>
+
+<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;">
+<!-- 左侧：资源详情 -->
+<div style="flex:1.4;min-width:320px;">
+<div class="card">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<h1 style="font-size:24px;color:var(--green-dark);">{{ r['title'] }}</h1>
+<span class="tag {{ 'tag-orange' if r['rtype'] == '临时用工' else '' }}">{{ r['rtype'] }}</span>
+</div>
+<div style="font-size:14px;color:var(--text2);margin:8px 0;">
+{{ r['region'] }} ｜ 发布人：{{ r['username'] }} ｜ {{ (r['created_at'] or '')[:10] }}
+</div>
+<div style="font-size:26px;color:var(--orange);font-weight:800;margin:10px 0;">
+¥{{ '%.0f' % r['price'] }}<small style="font-size:14px;color:var(--text2);font-weight:400;">起</small>
+</div>
+<div style="background:var(--green-bg);border-radius:10px;padding:14px 16px;">
+<div style="font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;">{{ r['description'] }}</div>
+</div>
+</div>
+
+<!-- 联系发布者 -->
+<div class="card">
+<div class="card-title"> 联系发布者</div>
+<div style="font-size:14px;color:var(--text2);margin-bottom:10px;">发布者：{{ r['username'] }}（实名农户）</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;">
+<a href="tel:{{ r['contact'] }}" class="btn btn-primary" style="text-decoration:none;">电话联系：{{ r['contact'] }}</a>
+<a href="https://uri.amap.com/search?keyword={{ r['region'] }}&src=乡约阡陌" target="_blank" rel="noopener" class="btn btn-outline" style="text-decoration:none;color:var(--green-dark);border-color:var(--green);">查看地区位置</a>
+</div>
+<p style="font-size:12px;color:var(--text2);margin-top:8px;">建议当面验货、确认权属与安全后再交易；平台仅提供信息撮合。</p>
+</div>
+
+<!-- 发起对接意向 -->
+{% if user and user['role'] == 0 %}
+<div class="card" style="background:var(--green-bg);">
+<div class="card-title"> 发起对接意向</div>
+<form action="/resource/{{ r['id'] }}/intent" method="post">
+<div class="form-group">
+<textarea name="message" class="form-control" rows="2" placeholder="留言说明您的需求，如：想租用两周，是否可配送？"></textarea>
+</div>
+<button type="submit" class="btn btn-orange">提交对接意向</button>
+</form>
+</div>
+{% elif not user %}
+<div class="card">
+<p style="font-size:14px;color:var(--text2);">登录后即可发起对接意向，与发布者沟通。</p>
+<a href="/login" class="btn btn-primary btn-sm" style="text-decoration:none;">去登录</a>
+</div>
+{% endif %}
+</div>
+
+<!-- 右侧：同地区同类资源 -->
+<div style="flex:1;min-width:280px;">
+{% if same %}
+<div class="card">
+<div class="card-title"> 同类型资源推荐</div>
+{% for x in same %}
+<a href="/resource/{{ x['id'] }}" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);text-decoration:none;">
+<img src="{{ url_for('static', filename='images/' + (x['image'] or 'farm_default.jpg')) }}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;" onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div style="flex:1;">
+<div style="font-size:14px;font-weight:600;color:var(--text);">{{ x['title'] }}</div>
+<div style="font-size:12px;color:var(--text2);">{{ x['region'] }}</div>
+</div>
+<div style="color:var(--orange);font-weight:700;">¥{{ '%.0f' % x['price'] }}</div>
+</a>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if nearby %}
+<div class="card">
+<div class="card-title"> 附近其他资源</div>
+{% for x in nearby %}
+<a href="/resource/{{ x['id'] }}" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);text-decoration:none;">
+<img src="{{ url_for('static', filename='images/' + (x['image'] or 'farm_default.jpg')) }}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;" onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div style="flex:1;">
+<div style="font-size:14px;font-weight:600;color:var(--text);">{{ x['title'] }}</div>
+<div style="font-size:12px;color:var(--text2);">{{ x['region'] }}</div>
+</div>
+<div style="color:var(--orange);font-weight:700;">¥{{ '%.0f' % x['price'] }}</div>
+</a>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}

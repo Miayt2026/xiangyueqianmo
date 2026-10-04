@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}乡约阡陌{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.cart-link{position:relative;color:var(--text2);font-size:14px;font-weight:600;}
+.cart-link:hover{color:var(--green-dark);}
+.cart-badge{position:absolute;top:-8px;right:-14px;background:var(--orange);color:#fff;font-size:11px;min-width:16px;height:16px;line-height:16px;border-radius:8px;text-align:center;padding:0 4px;}
+</style>
+</head>
+<body>
+<!-- 顶部导航栏（全角色共用） -->
+<nav class="topbar">
+<div class="topbar-inner">
+{% if request.endpoint not in ('login', 'register') %}
+<button class="hamburger" id="hamburger" aria-label="菜单">☰</button>
+{% endif %}
+<a href="/" class="logo">乡约阡陌</a>
+<div class="topbar-links">
+<a href="/trace" style="color:var(--green-dark);font-weight:600;">溯源查询</a>
+{% if user %}
+{% if user['role'] == 0 %}
+<a href="/cart" class="cart-link">购物车{% if cart_count %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}</a>
+{% endif %}
+<span class="user-badge">{{ user['username'] }} · {{ {'0':'游客','1':'商户','3':'平台管理员'}[user['role']|string] }}</span>
+{% if user['role'] == 1 %}
+<a href="/merchant">商户工作台</a>
+{% elif user['role'] == 3 %}
+<a href="/admin">管理后台</a>
+{% endif %}
+<a href="/logout" class="btn btn-outline btn-sm">退出</a>
+{% else %}
+<a href="/login" class="btn btn-primary btn-sm">登录</a>
+<a href="/register" class="btn btn-outline btn-sm">注册</a>
+{% endif %}
+</div>
+</div>
+</nav>
+
+<!-- 主区域：游客端左侧导航（未登录显示公开菜单，登录后显示完整菜单） -->
+<div class="console-wrap">
+{% if request.endpoint not in ('login', 'register') %}
+<aside class="sidebar" id="sidebar">
+{% if user %}
+{% include "tourist_sidebar.html" %}
+{% else %}
+{% include "public_sidebar.html" %}
+{% endif %}
+</aside>
+{% endif %}
+
+<div class="console-main">
+<div class="container">
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="flash flash-{{ category }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+</div>
+{% block content %}{% endblock %}
+</div>
+</div>
+
+<footer class="footer">
+<div class="container">
+<div class="footer-links">
+<a href="/">首页</a><span>|</span>
+<a href="/farmstays">农旅资源</a><span>|</span>
+<a href="/products">助农特产</a><span>|</span>
+<a href="/trace">溯源查询</a><span>|</span>
+<a href="/resources">闲置资源共享</a>
+</div>
+<p class="footer-copy">乡约阡陌 · 全国乡村农旅体验与助农服务平台</p>
+<p class="footer-extra">2026年华北五省大学生计算机应用大赛参赛作品</p>
+</div>
+</footer>
+
+<script>
+// 手机端汉堡菜单开合侧边栏
+var btn = document.getElementById('hamburger');
+var sb = document.getElementById('sidebar');
+if (btn && sb) {
+btn.addEventListener('click', function () {
+sb.classList.toggle('open');
+});
+}
+</script>
+</body>
+</html>

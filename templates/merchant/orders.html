@@ -1,0 +1,84 @@
+{% extends "base_console.html" %}
+{% block title %}订单管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "merchant/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 特产订单管理（物流发货 / 退款处理）</h1>
+<p class="page-subtitle">查看顾客下单与收货信息，发货后自动生成物流轨迹；处理退货退款申请</p>
+
+{% if rows %}
+<div class="card" style="padding:0;overflow:hidden;">
+<table class="table">
+<thead><tr><th>订单号</th><th>商品</th><th>数量</th><th>收货人</th><th>联系电话</th><th>收货地址</th><th>物流信息</th><th>状态</th><th>操作</th></tr></thead>
+<tbody>
+{% for o in rows %}
+<tr>
+<td style="font-size:12px;">{{ o['order_no'] }}</td>
+<td>{{ o['product_name'] }}</td>
+<td>{{ o['quantity'] }}</td>
+<td>{{ o['recv_name'] or '—' }}</td>
+<td style="font-size:12px;">{{ o['recv_phone'] or '—' }}</td>
+<td style="font-size:12px;color:var(--text2);max-width:180px;">{{ o['recv_address'] or '—' }}</td>
+<td style="font-size:12px;color:var(--text2);">
+{% if o['company_name'] %}{{ o['company_name'] }} {{ o['tracking_number'] }}{% if o['expected_arrival'] %}<br>预计 {{ o['expected_arrival'] }}{% endif %}{% else %}—{% endif %}
+</td>
+<td>
+<span class="tag {{ 'tag-orange' if o['status']=='待发货' else '' }}">{{ o['status'] }}</span>
+{% if o['status'] == '退款申请' %}<br><span style="font-size:12px;color:#c0392b;display:block;margin-top:2px;">原因：{{ o['refund_reason'] }}</span>{% endif %}
+</td>
+<td style="white-space:nowrap;">
+{% if o['status'] == '待发货' %}
+<button class="btn btn-primary btn-sm" onclick="document.getElementById('ship{{ o['id'] }}').style.display='block'">发货</button>
+<button class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c9c4;"
+onclick="if(confirm('确认取消该订单？')){document.getElementById('merCancel{{ o['id'] }}').submit();}">取消</button>
+<form id="merCancel{{ o['id'] }}" action="/merchant/order/cancel" method="post" style="display:none;">
+<input type="hidden" name="order_id" value="{{ o['id'] }}">
+</form>
+{% elif o['status'] == '已发货' %}
+<form action="/merchant/order/sign" method="post" style="display:inline;">
+<input type="hidden" name="order_id" value="{{ o['id'] }}">
+<button type="submit" class="btn btn-outline btn-sm">标记签收</button>
+</form>
+{% elif o['status'] == '退款申请' %}
+<form action="/merchant/order/refund" method="post" style="display:inline;">
+<input type="hidden" name="order_id" value="{{ o['id'] }}">
+<input type="hidden" name="action" value="approve">
+<button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('同意退款？')">同意退款</button>
+</form>
+<form action="/merchant/order/refund" method="post" style="display:inline;">
+<input type="hidden" name="order_id" value="{{ o['id'] }}">
+<input type="hidden" name="action" value="reject">
+<button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('驳回退款申请？')">驳回</button>
+</form>
+{% else %}
+<span style="font-size:12px;color:var(--text2);">—</span>
+{% endif %}
+</td>
+</tr>
+{% if o['status'] == '待发货' %}
+<tr id="ship{{ o['id'] }}" style="display:none;background:var(--green-bg);">
+<td colspan="9">
+<form action="/merchant/order/ship" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px;">
+<input type="hidden" name="order_id" value="{{ o['id'] }}">
+<select name="company_name" class="form-control" style="width:130px;">
+<option value="顺丰快递">顺丰快递</option>
+<option value="中通快递">中通快递</option>
+<option value="圆通快递">圆通快递</option>
+<option value="韵达快递">韵达快递</option>
+<option value="邮政EMS">邮政EMS</option>
+</select>
+<input type="text" name="tracking_number" class="form-control" style="width:180px;" placeholder="快递单号（留空自动生成）">
+<input type="date" name="expected_arrival" class="form-control" style="width:150px;" value="{{ now }}">
+<button type="submit" class="btn btn-primary btn-sm">确认发货</button>
+<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('ship{{ o['id'] }}').style.display='none'">取消</button>
+</form>
+</td>
+</tr>
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="empty"><p>暂无特产订单</p></div>
+{% endif %}
+{% endblock %}

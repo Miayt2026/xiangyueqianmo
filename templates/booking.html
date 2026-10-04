@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}在线预约 - 乡约阡陌{% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px;margin:0 auto;">
+<h1 class="page-title"> 预约「{{ fs['name'] }}」</h1>
+<p class="page-subtitle"> {{ fs['region'] }} · 预约后等待商户审核确认</p>
+<form action="/booking" method="post">
+<input type="hidden" name="farmstay_id" value="{{ fs['id'] }}">
+<div class="form-group">
+<label>选择项目</label>
+<select name="project_id" class="form-control">
+<option value="0">到店咨询（不指定项目）</option>
+{% for pj in projects %}
+<option value="{{ pj['id'] }}">{{ pj['name'] }}（¥{{ '%.0f' % pj['price'] }}/{{ pj['unit'] }}）</option>
+{% endfor %}
+</select>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>出行日期 *</label>
+<input type="date" name="visit_date" class="form-control" required>
+</div>
+<div class="form-group">
+<label>出行人数 *</label>
+<input type="number" name="people" value="2" min="1" max="50" class="form-control" required>
+</div>
+</div>
+<div class="form-group">
+<label>联系电话 *</label>
+<input type="text" name="phone" class="form-control" required placeholder="请输入手机号">
+</div>
+<div class="form-group">
+<label>备注</label>
+<textarea name="remark" class="form-control" placeholder="如：带孩子，需要儿童餐；有老人行动不便等"></textarea>
+</div>
+<div class="form-group">
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<input type="checkbox" name="add_product" value="1" checked>
+顺带加购该店产地特产（产地直供，支持溯源）
+</label>
+</div>
+<button type="submit" class="btn btn-orange btn-block">提交预约申请</button>
+</form>
+</div>
+<script>
+// 日期禁选过去时间
+var d = document.querySelector('input[name=visit_date]');
+var today = new Date().toISOString().split('T')[0];
+d.min = today;
+</script>
+{% endblock %}

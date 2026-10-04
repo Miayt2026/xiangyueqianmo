@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}发布资源 - 乡约阡陌{% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px;margin:0 auto;">
+<h1 class="page-title">＋ 发布闲置资源</h1>
+<p class="page-subtitle">让闲置农具、农房、用工、土地流转起来，助力乡村降本增收</p>
+<form action="/resource/publish" method="post">
+<div class="form-group">
+<label>资源类型</label>
+<select name="rtype" class="form-control">
+<option value="闲置农具">闲置农具</option>
+<option value="闲置农房">闲置农房</option>
+<option value="临时用工">临时用工</option>
+<option value="土地流转">土地流转</option>
+</select>
+</div>
+<div class="form-group">
+<label>标题 *</label>
+<input type="text" name="title" class="form-control" required placeholder="如：闲置播种机一台">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>所在地区</label>
+<input type="text" name="region" class="form-control" placeholder="如：河北省-保定市-涞源县">
+</div>
+<div class="form-group">
+<label>参考价格（元）</label>
+<input type="number" name="price" class="form-control" value="100" min="0" step="1">
+</div>
+</div>
+<div class="form-group">
+<label>详细描述</label>
+<textarea name="description" class="form-control" placeholder="描述资源情况、使用方式等"></textarea>
+</div>
+<div class="form-group">
+<label>联系方式</label>
+<input type="text" name="contact" class="form-control" placeholder="如：赵大姐 13800000000">
+</div>
+<button type="submit" class="btn btn-primary btn-block">发布资源</button>
+</form>
+</div>
+{% endblock %}

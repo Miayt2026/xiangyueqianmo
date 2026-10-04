@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}溯源查询 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title"> 全程溯源查询</h1>
+<p class="page-subtitle">输入特产包装上的溯源码，查看从田间到餐桌的全过程</p>
+
+<div class="card" style="max-width:640px;margin:0 auto;">
+<form action="/trace" method="post" style="display:flex;gap:10px;flex-wrap:wrap;">
+<input type="text" name="code" value="{{ code }}" class="form-control" required
+placeholder="输入溯源码，如 XYQM1001" style="flex:1;min-width:220px;text-transform:uppercase;">
+<button type="submit" class="btn btn-primary">查询溯源</button>
+</form>
+<p style="font-size:12px;color:var(--text2);margin-top:8px;"> 示例溯源码：XYQM1001（赵大姐果园红富士）、XYQM1005（青山农家乐走地鸡蛋）。<br>手机微信扫码包装上的二维码，即可直接打开本溯源页。</p>
+</div>
+
+{% if result %}
+{% set p = result['product'] %}
+{% set cert = 'GI2026-%05d' % p['id'] %}
+{% set rep = 'JC2026-%05d' % p['id'] %}
+{% set stages = {'种植': '种植过程', '管理': '农药与施肥', '采摘': '采摘时间', '检测': '检测报告'} %}
+{% set stage_order = ['种植', '管理', '采摘', '检测'] %}
+{% set traces_map = {} %}
+{% for t in result['traces'] %}{% if t['stage'] in stages %}{% set _ = traces_map.update({t['stage']: t}) %}{% endif %}{% endfor %}
+<div style="margin-top:16px;">
+<div class="card">
+<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+<img src="{{ url_for('static', filename='images/' + (p['image'] or 'product_default.jpg')) }}" style="width:88px;height:88px;border-radius:10px;object-fit:cover;">
+<div style="flex:1;min-width:220px;">
+<div style="font-size:20px;font-weight:800;color:var(--green-dark);">{{ p['name'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:4px;">
+{{ p['origin'] }} ｜ 溯源码：<b style="color:var(--green-dark);letter-spacing:1px;">{{ p['trace_code'] }}</b>
+</div>
+<div style="font-size:13px;color:var(--orange);margin-top:4px;">¥{{ '%.1f' % p['price'] }}/{{ p['unit'] }} ｜ 库存 {{ p['stock'] }}</div>
+<div style="font-size:12px;color:var(--text2);margin-top:6px;">{{ (p['description'] or '')[:80] }}</div>
+</div>
+<div style="text-align:center;flex-shrink:0;">
+<div style="width:104px;height:104px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;">
+<img src="{{ url_for('static', filename='qr/qr_' ~ p['id'] ~ '.png') }}" alt="溯源二维码" style="width:90px;height:90px;" onerror="this.style.display='none';this.parentNode.innerHTML='二维码生成中';">
+</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px;">微信扫码查看溯源</div>
+</div>
+</div>
+</div>
+
+<!-- 种植路线：从田间到餐桌的全程步骤 -->
+{% if traces_map %}
+<div class="card">
+<div class="card-title"> 种植路线（生长 · 管理 · 采摘 · 检测）</div>
+<div style="display:flex;gap:0;flex-wrap:wrap;align-items:stretch;">
+{% for st in stage_order %}
+{% if st in traces_map %}
+{% set t = traces_map[st] %}
+<div style="flex:1;min-width:140px;position:relative;padding:0 12px;border-left:3px solid var(--green);margin-left:6px;padding-left:16px;">
+<div style="font-size:13px;font-weight:700;color:var(--green-dark);">{{ stages[st] }}</div>
+<div style="font-size:12px;color:var(--text2);margin:3px 0;">{{ t['location'] }}</div>
+<div style="font-size:13px;line-height:1.6;">{{ t['detail'] }}</div>
+<div style="font-size:11px;color:var(--text2);margin-top:3px;">记录人：{{ t['recorder'] }} · {{ t['record_time'] }}</div>
+</div>
+{% endif %}
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+<div class="card">
+<div class="card-title"> 溯源档案（产地 · 种植 · 品控全记录）</div>
+<table class="table">
+<tbody>
+<tr><td style="width:130px;background:var(--green-bg);font-weight:600;">产地</td><td>{{ p['origin'] }}（{{ p['name'] }}产地直供）</td></tr>
+{% set farmers = result['traces'] %}
+<tr><td style="background:var(--green-bg);font-weight:600;">种植农户</td><td>{{ farmers[0]['recorder'] if farmers else '平台农户' }}（实名登记农户）</td></tr>
+{% for t in farmers %}
+{% if t['stage'] in stages %}
+<tr>
+<td style="background:var(--green-bg);font-weight:600;">{{ stages[t['stage']] }}</td>
+<td>{{ t['detail'] }}{% if t['stage'] == '采摘' %}（{{ t['record_time'] }}）{% endif %}</td>
+</tr>
+{% endif %}
+{% endfor %}
+<tr><td style="background:var(--green-bg);font-weight:600;">认证编号</td><td>{{ cert }} · 绿色食品认证（演示）</td></tr>
+<tr><td style="background:var(--green-bg);font-weight:600;">检测报告</td><td>{{ rep }} · 农残检测合格（演示数据）</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card">
+<div class="card-title"> 全程环节时间线（{{ result['traces']|length }} 个环节）</div>
+<div class="timeline">
+{% for t in result['traces'] %}
+<div class="timeline-item">
+<div class="timeline-dot"></div>
+<div class="timeline-stage">{{ t['stage'] }}</div>
+<div class="timeline-loc"> {{ t['location'] }}</div>
+<div style="font-size:14px;margin-top:2px;">{{ t['detail'] }}</div>
+<div style="font-size:12px;color:var(--text2);">记录人：{{ t['recorder'] }} · {{ t['record_time'] }}</div>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- 关联农家乐 -->
+{% if result['farm'] %}
+{% set f = result['farm'] %}
+<div class="card" style="background:var(--green-bg);">
+<div class="card-title"> 关联农家乐 · {{ f['name'] }}</div>
+<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+<img src="{{ url_for('static', filename='images/' + (f['image'] or 'farm_default.jpg')) }}" style="width:100px;height:78px;border-radius:10px;object-fit:cover;" onerror="this.src='{{ url_for('static', filename='images/farm_default.jpg') }}'">
+<div style="flex:1;min-width:220px;">
+<div style="font-size:15px;font-weight:700;color:var(--green-dark);">{{ f['name'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin:4px 0;">{{ f['region'] }} ｜ {{ f['category'] }}</div>
+<div style="font-size:13px;color:var(--text2);">{{ (f['description'] or '')[:60] }}</div>
+<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+{% for t in (f['tags'] or '').split(',')[:3] %}
+{% if t %}<span class="tag">{{ t }}</span>{% endif %}
+{% endfor %}
+<span style="color:var(--orange);font-weight:800;margin-left:auto;">¥{{ '%.0f' % (f['price_min'] or 0) }}起/人</span>
+</div>
+</div>
+<a href="/farmstay/{{ f['id'] }}" class="btn btn-primary" style="flex-shrink:0;">查看农家乐详情 →</a>
+</div>
+</div>
+{% endif %}
+</div>
+{% endif %}
+{% endblock %}

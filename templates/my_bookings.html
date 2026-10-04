@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}我的预约 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title"> 我的预约</h1>
+{% if rows %}
+{% for b in rows %}
+<div class="card">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+<div><b>{{ b['farmstay_name'] }}</b>
+<span class="tag {{ 'tag-orange' if b['status']=='待审核' else '' }}">{{ b['status'] }}</span>
+</div>
+<div style="font-size:13px;color:var(--text2);">预约编号：{{ b['booking_no'] }} · {{ b['created_at'] }}</div>
+</div>
+<div style="margin-top:10px;font-size:14px;color:var(--text2);">
+{{ b['visit_date'] }} ｜ {{ b['people'] }}人 ｜ {{ b['phone'] }}
+{% if b['add_product'] %} ｜ 已加购特产{% endif %}
+{% if b['remark'] %}<br> 备注：{{ b['remark'] }}{% endif %}
+</div>
+<div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+{% if b['status'] != '已取消' %}
+<form action="/booking/{{ b['id'] }}/cancel" method="post" style="margin:0;" onsubmit="return confirm('确定取消该预约吗？');">
+<button type="submit" class="btn btn-outline btn-sm" style="border-color:#e0a0a0;color:#c0564a;">取消预约</button>
+</form>
+<a href="/farmstay/{{ b['farmstay_id'] }}" class="btn btn-primary btn-sm" style="text-decoration:none;">查看农旅点</a>
+{% endif %}
+</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty"><div class="empty-icon"></div><p>还没有预约记录，去发现乡村好去处吧～</p>
+<a href="/farmstays" class="btn btn-primary" style="margin-top:10px;">去逛逛</a></div>
+{% endif %}
+{% endblock %}

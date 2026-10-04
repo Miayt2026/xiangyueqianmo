@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}注册 - 乡约阡陌{% endblock %}
+{% block content %}
+<div class="login-page">
+<div class="login-card">
+<div class="login-title"> 创建账号</div>
+<div class="login-sub" id="regTitle">游客自助注册</div>
+
+<form method="post">
+<input type="hidden" name="utype" id="utype" value="tourist">
+<div class="role-select" id="roleSelect">
+<div class="role-card selected" data-role="tourist">
+<div class="role-icon"></div>
+<div class="role-name">我是游客</div>
+</div>
+<div class="role-card" data-role="merchant">
+<div class="role-icon"></div>
+<div class="role-name">商户入驻</div>
+</div>
+</div>
+<div class="form-group">
+<label>用户名</label>
+<input type="text" name="username" class="form-control" required placeholder="请输入用户名">
+</div>
+<div class="form-group">
+<label>密码（至少6位）</label>
+<input type="password" name="password" class="form-control" required placeholder="请输入密码">
+</div>
+<div class="form-group">
+<label>手机号</label>
+<input type="text" name="phone" class="form-control" placeholder="选填">
+</div>
+<div class="form-group">
+<label>所在地区</label>
+<input type="text" name="region" class="form-control" placeholder="如：河北省-张家口市-崇礼区">
+</div>
+<!-- 商户专属字段 -->
+<div id="merchantFields" style="display:none;">
+<div class="form-group">
+<label>店铺名称 *</label>
+<input type="text" name="shop_name" class="form-control" placeholder="如：青山农家乐">
+</div>
+<div class="form-group">
+<label>商户类型</label>
+<select name="shop_type" class="form-control">
+<option value="正规农家乐">正规农家乐</option>
+<option value="农户体验点">农户体验点</option>
+<option value="农村合作社">农村合作社</option>
+</select>
+</div>
+<div class="form-group">
+<label>经营地址</label>
+<input type="text" name="shop_address" class="form-control" placeholder="选填">
+</div>
+<div class="form-group">
+<label>店铺简介</label>
+<textarea name="shop_desc" class="form-control" placeholder="介绍一下您的农家乐/果园"></textarea>
+</div>
+</div>
+<button type="submit" class="btn btn-primary btn-block">注 册</button>
+</form>
+<p style="text-align:center;margin-top:14px;font-size:14px;">已有账号？<a href="/login">去登录</a></p>
+</div>
+</div>
+<script>
+var cards = document.querySelectorAll('.role-card');
+var mf = document.getElementById('merchantFields');
+var utype = document.getElementById('utype');
+var regTitle = document.getElementById('regTitle');
+cards.forEach(function (card) {
+card.addEventListener('click', function () {
+cards.forEach(function (c) { c.classList.remove('selected'); });
+this.classList.add('selected');
+var isMerchant = this.dataset.role === 'merchant';
+mf.style.display = isMerchant ? 'block' : 'none';
+utype.value = isMerchant ? 'merchant' : 'tourist';
+regTitle.textContent = isMerchant ? '商户入驻注册（需平台审核）' : '游客自助注册';
+});
+});
+// 支持 /register?type=merchant 直达商户注册
+if (new URLSearchParams(location.search).get('type') === 'merchant') {
+cards[1].click();
+}
+</script>
+{% endblock %}

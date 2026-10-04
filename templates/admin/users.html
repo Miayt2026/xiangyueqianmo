@@ -1,0 +1,64 @@
+{% extends "base_console.html" %}
+{% block title %}用户账号管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 用户账号管理</h1>
+<p class="page-subtitle">仅平台管理员可见，可创建账号并管理账号状态</p>
+
+<div class="card">
+<div class="card-title">＋ 创建账号</div>
+<form action="/admin/user/create" method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+<div style="min-width:150px;">
+<div class="ai-input-label">用户名</div>
+<input type="text" name="username" class="form-control" required>
+</div>
+<div style="min-width:120px;">
+<div class="ai-input-label">初始密码</div>
+<input type="text" name="password" class="form-control" value="123456">
+</div>
+<div style="min-width:160px;">
+<div class="ai-input-label">角色</div>
+<select name="role" class="form-control">
+<option value="0">游客</option>
+<option value="1">商户</option>
+<option value="3">平台管理员</option>
+</select>
+</div>
+<div style="flex:1;min-width:180px;">
+<div class="ai-input-label">管辖地区</div>
+<input type="text" name="region" class="form-control" placeholder="如：河北省-保定市-涞源县">
+</div>
+<button type="submit" class="btn btn-primary">创建</button>
+</form>
+</div>
+
+<div class="card">
+<div class="card-title">全部用户（{{ rows|length }}）</div>
+<table class="table">
+<thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>店铺</th><th>手机</th><th>地区</th><th>状态</th><th>操作</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td>{{ r['id'] }}</td>
+<td>{{ r['username'] }}</td>
+<td><span class="tag">{{ {'0':'游客','1':'商户','3':'平台管理员'}[r['role']|string] }}</span></td>
+<td>{{ r['shop_name'] or '—' }}</td>
+<td>{{ r['phone'] }}</td>
+<td style="font-size:13px;">{{ r['region'] }}</td>
+<td>{{ r['status'] }}</td>
+<td>
+<form action="/admin/user/update" method="post">
+<input type="hidden" name="user_id" value="{{ r['id'] }}">
+<select name="status" class="form-control" style="display:inline-block;width:90px;padding:4px;font-size:13px;">
+<option value="正常" {% if r['status']=='正常' %}selected{% endif %}>正常</option>
+<option value="禁用" {% if r['status']=='禁用' %}selected{% endif %}>禁用</option>
+</select>
+<button type="submit" class="btn btn-outline btn-sm">更新</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

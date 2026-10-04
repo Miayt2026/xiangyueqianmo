@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}首页 - 乡约阡陌{% endblock %}
+{% block content %}
+<!-- 公告弹窗（参考图1：白卡+喇叭+分类标签+日期+虚线分隔） -->
+{% if notices %}
+<div id="noticeModal" class="notice-modal-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+<div class="notice-modal" style="position:relative;background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:82vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.25);animation:modalIn .3s ease;">
+<div style="position:absolute;top:12px;right:14px;z-index:5;background:#f2f4f3;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#333;" onclick="closeNoticeModal()">×</div>
+<div style="display:flex;align-items:center;gap:10px;padding:20px 22px 14px;border-bottom:1px dashed #dbe8df;">
+<div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#27ae60,#1e8a4a);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0;">📢</div>
+<div>
+<div style="font-size:18px;font-weight:800;color:#1c2b23;">最新公告</div>
+<div style="font-size:12px;color:#8aa093;margin-top:2px;">乡约阡陌 · 平台动态早知道</div>
+</div>
+</div>
+<div style="padding:6px 22px 18px;">
+{% for n in notices[:4] %}
+<a href="/farmstays" style="display:block;text-decoration:none;padding:14px 0;border-bottom:1px dashed #e5ede7;">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+<span style="background:#eaf7ef;color:#1e8a4a;font-size:12px;font-weight:700;border-radius:6px;padding:2px 10px;">{{ n['category'] or '农旅活动' }}</span>
+<span style="font-size:13px;font-weight:700;color:#22332b;">{{ n['title'] }}</span>
+<span style="font-size:12px;color:#9aa8a0;margin-left:auto;">{{ (n['created_at'] or '')[:10] }}</span>
+</div>
+<div style="font-size:13px;color:#6b7c72;margin-top:6px;line-height:1.6;">{{ n['content'] }}</div>
+</a>
+{% endfor %}
+</div>
+<div style="padding:0 22px 20px;">
+<a href="/farmstays" class="btn btn-primary btn-block" style="text-decoration:none;">去逛逛乡村好去处</a>
+</div>
+</div>
+</div>
+<style>
+@keyframes modalIn{from{transform:translateY(18px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+</style>
+<script>
+(function(){
+  try {
+    if (!sessionStorage.getItem('xyqm_notice_v1')) {
+      var m = document.getElementById('noticeModal');
+      if (m) { m.style.display = 'flex'; sessionStorage.setItem('xyqm_notice_v1', '1'); }
+    }
+  } catch (e) {}
+})();
+function closeNoticeModal(){
+  var m = document.getElementById('noticeModal');
+  if (m) m.style.display = 'none';
+}
+</script>
+{% endif %}
+
+<!-- Banner 轮播（首页运营配置）-->
+{% if banners %}
+<div class="banner-slider" id="bannerSlider" style="background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+{% for b in banners %}
+<div class="banner-slide{% if loop.first %} active{% endif %}">
+<img src="{{ url_for('static', filename='images/' + b['image']) }}"
+alt="{{ b['title'] }}" onerror="this.src='{{ url_for('static', filename='images/banner_default.jpg') }}'">
+<div class="banner-overlay"><div class="banner-title">{{ b['title'] }}</div></div>
+</div>
+{% endfor %}
+<div class="banner-dots" id="bannerDots"></div>
+</div>
+<style>
+.banner-slider{position:relative;overflow:hidden;}
+.banner-slide{position:relative;display:none;height:340px;}
+.banner-slide.active{display:block;animation:fadeIn .6s ease;}
+.banner-slide img{width:100%;height:100%;object-fit:cover;display:block;}
+.banner-overlay{position:absolute;left:24px;bottom:26px;right:24px;text-align:left;pointer-events:none;}
+.banner-title{display:inline-block;color:#fff;font-size:17px;font-weight:700;letter-spacing:1px;
+  text-shadow:0 1px 4px rgba(0,0,0,.55),0 0 12px rgba(0,0,0,.25);
+  background:linear-gradient(90deg, rgba(0,0,0,.28), rgba(0,0,0,0));
+  padding:6px 14px 6px 0;border-radius:6px;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.banner-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:8px;z-index:3;}
+.banner-dots span{width:9px;height:9px;border-radius:50%;background:rgba(39,174,96,.45);cursor:pointer;transition:.2s;}
+.banner-dots span.on{background:var(--green);transform:scale(1.25);}
+@media(max-width:768px){.banner-slide{height:170px;}.banner-title{font-size:14px;left:16px;bottom:18px;}}
+</style>
+<script>
+(function(){
+  var slider = document.getElementById('bannerSlider');
+  if (!slider) return;
+  var slides = slider.querySelectorAll('.banner-slide');
+  var dotsBox = document.getElementById('bannerDots');
+  var idx = 0, timer = null;
+  for (var i = 0; i < slides.length; i++) {
+    var d = document.createElement('span');
+    if (i === 0) d.className = 'on';
+    (function(n){ d.addEventListener('click', function(){ go(n); restart(); }); })(i);
+    dotsBox.appendChild(d);
+  }
+  var dots = dotsBox.children;
+  function go(n){
+    slides[idx].classList.remove('active');
+    dots[idx].classList.remove('on');
+    idx = (n + slides.length) % slides.length;
+    slides[idx].classList.add('active');
+    dots[idx].classList.add('on');
+  }
+  function restart(){ if (timer) clearInterval(timer); timer = setInterval(function(){ go(idx + 1); }, 4000); }
+  if (slides.length > 1) restart();
+})();
+</script>
+{% endif %}
+
+<!-- 系统公告（轮播下方提示框） -->
+{% if notices %}
+<div class="notice-bar" style="background:linear-gradient(90deg,#e8f6ee,#f0faf4);border:1px solid rgba(39,174,96,.3);border-radius:12px;padding:12px 16px;margin:14px 0;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+<span style="background:var(--green);color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:3px 10px;flex-shrink:0;">系统公告</span>
+<div style="flex:1;min-width:200px;">
+{% for n in notices[:1] %}
+<div style="font-size:14px;font-weight:700;color:var(--green-dark);">{{ n['title'] }}</div>
+<div style="font-size:13px;color:var(--text2);margin-top:2px;">{{ n['content'] }}</div>
+{% endfor %}
+</div>
+<a href="/farmstays" style="font-size:13px;color:var(--green);flex-shrink:0;font-weight:600;">了解更多 →</a>
+</div>
+{% endif %}
+
+
+<!-- 全域搜索栏（轮播下方绿色条） -->
+<div class="home-search" style="margin:14px 0 4px;background:linear-gradient(135deg,#1e8a4a,#27ae60 60%,#56c596);border-radius:14px;padding:22px 24px;color:#fff;">
+<div style="font-size:17px;font-weight:800;">秋收万颗果 · 全国乡村农旅一键直达</div>
+<div style="font-size:13px;opacity:.9;margin-top:4px;">搜索目的地、特产、体验项目，带你走进真实的中国乡村</div>
+<form action="/farmstays" method="get" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+<input type="text" name="keyword" placeholder="输入关键词，如：采摘 / 杨梅 / 崇礼 / 民宿 / 剪纸" class="form-control" style="flex:1;min-width:240px;border-radius:10px;border:none;padding:12px 14px;font-size:14px;outline:none;">
+<button type="submit" style="background:#f5a623;border:none;color:#fff;font-weight:700;border-radius:10px;padding:0 26px;font-size:14px;cursor:pointer;">搜索</button>
+</form>
+</div>
+
+<!-- 分类入口 -->
+<div style="display:flex;gap:12px;margin:16px 0 20px;">
+<a href="/farmstays?category=采摘体验" class="item-card" style="text-decoration:none;align-items:center;justify-content:center;padding:10px;flex:1;">
+<div style="font-size:18px;"></div><div style="font-weight:600;color:var(--text);margin-top:4px;font-size:14px;">采摘体验</div>
+</a>
+<a href="/farmstays?category=农家住宿" class="item-card" style="text-decoration:none;align-items:center;justify-content:center;padding:10px;flex:1;">
+<div style="font-size:18px;"></div><div style="font-weight:600;color:var(--text);margin-top:4px;font-size:14px;">农家住宿</div>
+</a>
+<a href="/farmstays?category=农耕研学" class="item-card" style="text-decoration:none;align-items:center;justify-content:center;padding:10px;flex:1;">
+<div style="font-size:18px;"></div><div style="font-weight:600;color:var(--text);margin-top:4px;font-size:14px;">农耕研学</div>
+</a>
+<a href="/farmstays?category=非遗体验" class="item-card" style="text-decoration:none;align-items:center;justify-content:center;padding:10px;flex:1;">
+<div style="font-size:18px;"></div><div style="font-weight:600;color:var(--text);margin-top:4px;font-size:14px;">非遗体验</div>
+</a>
+<a href="/farmstays?category=农家餐饮" class="item-card" style="text-decoration:none;align-items:center;justify-content:center;padding:10px;flex:1;">
+<div style="font-size:18px;"></div><div style="font-weight:600;color:var(--text);margin-top:4px;font-size:14px;">农家餐饮</div>
+</a>
+</div>
+
+<!-- 时令农事推荐（本月） -->
+{% set season_data = {
+  '1月': ['小寒','大寒','北方温室育苗','腊肉腊肠晾晒季'],
+  '2月': ['立春','雨水','南方春耕备耕','草莓采摘季'],
+  '3月': ['惊蛰','春分','小麦返青施肥','早春野菜尝鲜'],
+  '4月': ['清明','谷雨','水稻育秧','春茶采摘季'],
+  '5月': ['立夏','小满','小麦灌浆','樱桃/桑葚上市'],
+  '6月': ['芒种','夏至','水稻插秧','杨梅/桃李采摘'],
+  '7月': ['小暑','大暑','双抢农忙','葡萄/西瓜尝鲜'],
+  '8月': ['立秋','处暑','秋玉米采收','鲜梨/苹果开摘'],
+  '9月': ['白露','秋分','晚稻抽穗','核桃/板栗成熟'],
+  '10月': ['寒露','霜降','秋收冬藏','苹果/红枣大丰收'],
+  '11月': ['立冬','小雪','越冬作物管理','脐橙/柑橘采摘'],
+  '12月': ['大雪','冬至','农田冬灌','腊味腌制季']
+} %}
+{% set now_month = ((month or '9')|int) ~ '月' %}
+{% set sd = season_data.get(now_month, season_data['10月']) %}
+<div class="season-module" style="background:var(--green-bg);border-radius:14px;padding:16px 18px;margin-bottom:20px;border:1px solid rgba(39,174,96,.25);">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<div style="font-weight:800;color:var(--green-dark);font-size:16px;">{{ now_month }}时令农事推荐</div>
+<span style="font-size:12px;background:var(--green);color:#fff;border-radius:999px;padding:2px 10px;">AI 知识库</span>
+</div>
+<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;">
+{% for item in sd %}
+<div style="flex:1;min-width:140px;background:#fff;border-radius:10px;padding:10px 12px;">
+<div style="font-size:12px;color:var(--green-dark);font-weight:700;">{{ '节气' if loop.index == 1 else ('农事' if loop.index == 2 else '小贴士') }}</div>
+<div style="font-size:14px;color:var(--text);margin-top:4px;">{{ item }}</div>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- AI 出行规划入口 -->
+<div class="ai-module">
+<div class="ai-title"> AI 出行规划助手</div>
+<p style="font-size:14px;color:var(--text2);">"周末带爸妈去崇礼避暑" → AI 为您生成定制乡村出行方案，一键跳转预约。</p>
+<a href="/ai_travel" class="btn btn-primary" style="margin-top:10px;">开始规划</a>
+</div>
+
+<!-- 热门目的地 -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px;">
+<h2 style="font-size:18px;color:var(--green-dark);"> 热门农旅目的地</h2>
+<a href="/farmstays" style="font-size:14px;">查看全部 →</a>
+</div>
+<div class="grid">
+{% for fs in farmstays %}
+<a href="/farmstay/{{ fs['id'] }}" class="item-card" style="text-decoration:none;">
+<img class="item-img" src="{{ url_for('static', filename='images/' + (fs['image'] or 'farm_default.jpg')) }}" alt="{{ fs['name'] }}">
+<div class="item-body">
+<div class="item-name" style="color:var(--text);">{{ fs['name'] }}</div>
+<div class="item-sub"> {{ fs['region'] }} · {{ fs['category'] }}</div>
+<div class="item-meta">
+<span class="item-price">¥{{ '%.0f' % fs['price_min'] }}<small>起</small></span>
+<span class="tag-star">⭐ {{ fs['score'] }}</span>
+</div>
+<div>
+{% for t in (fs['tags'] or '').split(',')[:3] %}
+{% if t %}<span class="tag">{{ t }}</span>{% endif %}
+{% endfor %}
+</div>
+</div>
+</a>
+{% endfor %}
+</div>
+
+<!-- 助农特产 -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 12px;">
+<h2 style="font-size:18px;color:var(--green-dark);"> 助农特产直供</h2>
+<a href="/products" style="font-size:14px;">查看全部 →</a>
+</div>
+<div class="grid">
+{% for p in products %}
+<a href="/product/{{ p['id'] }}" class="item-card" style="text-decoration:none;">
+<img class="item-img" src="{{ url_for('static', filename='images/' + (p['image'] or 'product_default.jpg')) }}" alt="{{ p['name'] }}">
+<div class="item-body">
+<div class="item-name" style="color:var(--text);">{{ p['name'] }}</div>
+<div class="item-sub"> {{ p['origin'] }} · 产地溯源</div>
+<div class="item-meta">
+<span class="item-price">¥{{ '%.1f' % p['price'] }}<small>/{{ p['unit'] }}</small></span>
+<span class="tag">溯源可查</span>
+</div>
+</div>
+</a>
+{% endfor %}
+</div>
+
+<!-- 闲置资源共享 -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 12px;">
+<h2 style="font-size:18px;color:var(--green-dark);"> 乡村闲置资源共享</h2>
+<a href="/resources" style="font-size:14px;">进入资源广场 →</a>
+</div>
+<div class="grid grid-4">
+{% for r in resources %}
+<div class="item-card">
+<div class="item-body">
+<div class="item-name" style="font-size:14px;">{{ r['title'] }}</div>
+<div class="item-sub">{{ r['rtype'] }} · {{ r['region'] }}</div>
+<div class="item-meta">
+<span class="item-price">¥{{ '%.0f' % r['price'] }}<small>起</small></span>
+<span class="tag-orange tag">{{ r['rtype'] }}</span>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}我的评价 - 乡约阡陌{% endblock %}
+{% block content %}
+<h1 class="page-title"> 我的评价</h1>
+
+<!-- 发布评价 -->
+<div class="card">
+<div class="card-title"> 发表新评价</div>
+<form action="/my/reviews" method="post">
+<div class="form-row">
+<div class="form-group">
+<label>选择农家乐</label>
+<select name="farmstay_id" class="form-control" required>
+{% for fs in farmstays %}
+<option value="{{ fs['id'] }}">{{ fs['name'] }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="form-group">
+<label>评分</label>
+<select name="rating" class="form-control">
+<option value="5">⭐⭐⭐⭐⭐ 非常好</option>
+<option value="4">⭐⭐⭐⭐ 好</option>
+<option value="3">⭐⭐⭐ 一般</option>
+<option value="2">⭐⭐ 较差</option>
+<option value="1">⭐ 差</option>
+</select>
+</div>
+</div>
+<div class="form-group">
+<label>评价内容</label>
+<textarea name="content" class="form-control" required placeholder="分享您的体验感受..."></textarea>
+</div>
+<button type="submit" class="btn btn-primary">发布评价</button>
+</form>
+</div>
+
+{% if rows %}
+<div class="card">
+<div class="card-title">我的评价记录</div>
+{% for r in rows %}
+<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+<div style="font-size:13px;color:var(--text2);"> {{ r['farmstay_name'] }} · {{ '★' * r['rating'] }} · {{ r['created_at'] }}</div>
+<div style="font-size:14px;margin-top:4px;">{{ r['content'] }}</div>
+{% if r['reply'] %}
+<div style="font-size:13px;color:var(--green-dark);margin-top:4px;">商户回复：{{ r['reply'] }}</div>
+{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

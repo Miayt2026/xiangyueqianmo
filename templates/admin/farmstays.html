@@ -1,0 +1,88 @@
+{% extends "base_console.html" %}
+{% block title %}农旅内容管理 - 乡约阡陌{% endblock %}
+{% block sidebar %}{% include "admin/sidebar.html" %}{% endblock %}
+{% block content %}
+<h1 class="page-title"> 农旅内容管理</h1>
+
+<div class="card">
+<div class="card-title" style="display:flex;align-items:center;gap:10px;">
+<span>全部农旅点位（{{ rows|length }}，含下架）</span>
+<button class="btn btn-sm btn-primary" style="margin-left:auto;" onclick="var e=document.getElementById('add-farmstay-form');e.style.display=e.style.display==='none'?'block':'none';this.textContent=this.textContent==='新增点位'?'收起新增':'新增点位';">新增点位</button>
+</div>
+<div id="add-farmstay-form" style="display:none;border:1px dashed var(--green);border-radius:10px;padding:14px;margin-bottom:14px;">
+<div style="font-size:14px;font-weight:700;color:var(--green-dark);margin-bottom:10px;">新增农旅点位</div>
+<form action="/admin/farmstay/add" method="post" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+<input name="name" class="form-control" placeholder="点位名称 *" required>
+<select name="category" class="form-control">
+<option value="采摘体验">采摘体验</option><option value="农家住宿">农家住宿</option>
+<option value="农家餐饮">农家餐饮</option><option value="农耕研学">农耕研学</option>
+<option value="非遗体验">非遗体验</option>
+</select>
+<input name="region" class="form-control" placeholder="地区，如：河北省-保定市-涞源县">
+<input name="address" class="form-control" placeholder="详细地址">
+<input name="price_min" class="form-control" type="number" min="0" step="0.01" placeholder="参考价（元/人）">
+<input name="tags" class="form-control" placeholder="标签，逗号分隔，如：果园,亲子,采摘">
+<input name="image" class="form-control" placeholder="图片文件名，如 apple_orchard.jpg">
+<input name="merchant_id" class="form-control" type="number" min="1" placeholder="所属商户ID（默认1）">
+<textarea name="description" class="form-control" rows="2" placeholder="点位简介"></textarea>
+<button type="submit" class="btn btn-primary" style="align-self:end;">保存新增</button>
+</form>
+</div>
+<table class="table">
+<thead><tr><th>ID</th><th>点位名称</th><th>商户</th><th>地区</th><th>类型</th><th>参考价</th><th>评分</th><th>状态</th><th>操作</th></tr></thead>
+<tbody>
+{% for f in rows %}
+<tr>
+<td>{{ f['id'] }}</td>
+<td><a href="/farmstay/{{ f['id'] }}" target="_blank">{{ f['name'] }}</a></td>
+<td>{{ f['merchant_name'] or '—' }}</td>
+<td style="font-size:13px;">{{ f['region'] }}</td>
+<td>{{ f['category'] }}</td>
+<td>¥{{ '%.0f' % f['price_min'] }}</td>
+<td>⭐ {{ f['score'] }}</td>
+<td>{{ f['status'] }}</td>
+<td style="white-space:nowrap;">
+<form action="/admin/farmstay/update" method="post" style="display:inline-flex;gap:6px;">
+<input type="hidden" name="farmstay_id" value="{{ f['id'] }}">
+<select name="status" class="form-control" style="display:inline-block;width:80px;padding:4px;font-size:13px;">
+<option value="上架" {% if f['status']=='上架' %}selected{% endif %}>上架</option>
+<option value="下架" {% if f['status']=='下架' %}selected{% endif %}>下架</option>
+</select>
+<button type="submit" class="btn btn-outline btn-sm">状态</button>
+</form>
+<button class="btn btn-outline btn-sm" onclick="var e=document.getElementById('edit-farmstay-{{ f['id'] }}');e.style.display=e.style.display==='none'?'table-row':'none';">编辑</button>
+<form action="/admin/farmstay/delete" method="post" style="display:inline;" onsubmit="return confirm('确定删除点位「{{ f['name'] }}」吗？其项目/房型/特产将一并失效。');">
+<input type="hidden" name="farmstay_id" value="{{ f['id'] }}">
+<button type="submit" class="btn btn-danger btn-sm">删除</button>
+</form>
+</td>
+</tr>
+<tr id="edit-farmstay-{{ f['id'] }}" style="display:none;">
+<td colspan="9" style="background:var(--green-bg);">
+<form action="/admin/farmstay/edit" method="post" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+<input type="hidden" name="farmstay_id" value="{{ f['id'] }}">
+<input name="name" class="form-control" value="{{ f['name'] }}" required>
+<select name="category" class="form-control">
+{% for c in ['采摘体验','农家住宿','农家餐饮','农耕研学','非遗体验'] %}
+<option value="{{ c }}" {% if f['category']==c %}selected{% endif %}>{{ c }}</option>
+{% endfor %}
+</select>
+<input name="region" class="form-control" value="{{ f['region'] }}">
+<input name="address" class="form-control" value="{{ f['address'] or '' }}">
+<input name="price_min" class="form-control" type="number" min="0" step="0.01" value="{{ f['price_min'] }}">
+<input name="tags" class="form-control" value="{{ f['tags'] or '' }}">
+<input name="image" class="form-control" value="{{ f['image'] or '' }}">
+<select name="status" class="form-control">
+<option value="上架" {% if f['status']=='上架' %}selected{% endif %}>上架</option>
+<option value="下架" {% if f['status']=='下架' %}selected{% endif %}>下架</option>
+</select>
+<textarea name="description" class="form-control" rows="2" placeholder="简介">{{ f['description'] or '' }}</textarea>
+<button type="submit" class="btn btn-primary" style="align-self:end;">保存修改</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}
