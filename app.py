@@ -133,18 +133,20 @@ def index():
                            products=products, resources=resources, user=get_user(),
                            notices=notices, active='home')
 
-# ==========【修复后的公告路由】增加空值防护，解决500渲染报错 ==========
+# ==========【修复后的公告路由】sqlite3.Row 不能调用 .get()，使用[]取值加异常捕获 ==========
 @app.route('/notices')
 def notices_page():
     rows = models.list_notices('启用')
     grouped = {}
     for r in rows:
-        cate = (r.get('category') or '平台通知').strip()
+        # sqlite3.Row 只能用 [] 取值，不能 .get()
+        try:
+            cate = r['category'].strip()
+        except (KeyError, TypeError):
+            cate = "平台通知"
         grouped.setdefault(cate, []).append(r)
-
     order = ['农旅活动', '政策公告', '平台通知']
     order = [c for c in order if c in grouped] + [c for c in grouped if c not in order]
-
     contacts = {
         'hotline': '400-888-1234',
         'email': 'service@xiangyueqianmo.com',
@@ -1049,7 +1051,7 @@ def admin_merchants():
 @role_required(3)
 def admin_merchant_audit():
     uid = int(request.form.get('user_id'))
-    action = request.form.get('action', '正常')
+    action = request.form.get('action', 'pass')
     status = '正常' if action == 'pass' else '驳回'
     models.update_user(uid, status=status)
     flash('审核操作完成', 'success')
