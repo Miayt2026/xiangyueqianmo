@@ -5,37 +5,26 @@
 角色：0游客 / 1商户 / 3平台管理员
 运行：python app.py → 浏览器 http://127.0.0.1:5000
 """
-
 import os
 import datetime
 import sys
 from functools import wraps
 from flask import (Flask, render_template, request, redirect, url_for,
                    session, flash)
-
 import models
 import ai_helper
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
 def _resource_dir():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS
     return os.path.dirname(os.path.abspath(__file__))
-
-
 RESOURCE_DIR = _resource_dir()
-
 app = Flask(__name__,
             template_folder=os.path.join(RESOURCE_DIR, 'templates'),
             static_folder=os.path.join(RESOURCE_DIR, 'static'))
 app.secret_key = 'xiangyueqianmo-2026-secret-key'
 app.config['SESSION_PERMANENT'] = False
-
-
 # ================= 登录与权限 =================
-
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -44,8 +33,6 @@ def login_required(view):
             return redirect(url_for('login'))
         return view(*args, **kwargs)
     return wrapped
-
-
 def role_required(*roles):
     def decorator(view):
         @wraps(view)
@@ -59,25 +46,16 @@ def role_required(*roles):
             return view(*args, **kwargs)
         return wrapped
     return decorator
-
-
 def get_user():
     if 'user_id' in session:
         return models.get_user_by_id(session['user_id'])
     return None
-
-
 @app.context_processor
 def inject_globals():
     u = get_user()
     return {'cart_count': models.get_cart_count(u['id']) if u else 0}
-
-
 ROLE_NAMES = {0: '游客', 1: '商户', 3: '平台管理员'}
-
-
 # ================= 公共：登录/注册 =================
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -103,8 +81,6 @@ def login():
             return redirect(url_for('index'))
         flash('用户名或密码错误', 'danger')
     return render_template('login.html')
-
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -139,17 +115,12 @@ def register():
                 return redirect(url_for('login'))
             flash('用户名已存在，请换一个', 'danger')
     return render_template('register.html')
-
-
 @app.route('/logout')
 def logout():
     session.clear()
     flash('已退出登录', 'info')
     return redirect(url_for('login'))
-
-
 # ================= 游客端 =================
-
 @app.route('/')
 def index():
     banners = models.list_banners()
@@ -162,15 +133,18 @@ def index():
                            products=products, resources=resources, user=get_user(),
                            notices=notices, active='home')
 
-
+# ==========【修复后的公告路由】增加空值防护，解决500渲染报错 ==========
 @app.route('/notices')
 def notices_page():
     rows = models.list_notices('启用')
     grouped = {}
     for r in rows:
-        grouped.setdefault(r['category'] or '平台通知', []).append(r)
+        cate = (r.get('category') or '平台通知').strip()
+        grouped.setdefault(cate, []).append(r)
+
     order = ['农旅活动', '政策公告', '平台通知']
     order = [c for c in order if c in grouped] + [c for c in grouped if c not in order]
+
     contacts = {
         'hotline': '400-888-1234',
         'email': 'service@xiangyueqianmo.com',
@@ -179,9 +153,13 @@ def notices_page():
         'cooperate_hotline': '400-888-5678',
         'cooperate_email': 'cooperate@xiangyueqianmo.com',
     }
-    return render_template('notices.html', grouped=grouped, order=order, rows=rows,
-                           contacts=contacts, user=get_user(), active='notices')
-
+    return render_template('notices.html',
+                           grouped=grouped,
+                           order=order,
+                           rows=rows,
+                           contacts=contacts,
+                           user=get_user(),
+                           active='notices')
 
 @app.route('/farmstays')
 def farmstay_list():
@@ -212,8 +190,6 @@ def farmstay_list():
                            category=category, keyword=keyword, categories=categories,
                            regions=regions,
                            user=get_user(), active='farmstays')
-
-
 @app.route('/farmstay/<int:fid>')
 def farmstay_detail(fid):
     fs = models.get_farmstay(fid)
@@ -235,8 +211,6 @@ def farmstay_detail(fid):
                            rooms=rooms, products=products, reviews=reviews,
                            ai_knowledge=ai_knowledge, merchant=merchant, user=get_user(),
                            months=months, geo=geo, tab=tab, active='farmstays')
-
-
 @app.route('/farmstay/<int:fid>/plan', methods=['GET', 'POST'])
 def farmstay_plan_page(fid):
     fs = models.get_farmstay(fid)
@@ -262,8 +236,6 @@ def farmstay_plan_page(fid):
                            rooms=rooms, products=products, merchant=merchant,
                            result=result, days=days, people=people, interests=interests,
                            months=months, geo=geo, user=get_user(), active='farmstays')
-
-
 @app.route('/booking', methods=['GET', 'POST'])
 @login_required
 def booking():
@@ -293,16 +265,12 @@ def booking():
     projects = models.list_projects(fid)
     return render_template('booking.html', fs=fs, projects=projects, user=get_user(),
                            active='bookings')
-
-
 @app.route('/products')
 def product_list():
     keyword = request.args.get('keyword', '')
     products = models.list_products(keyword=keyword)
     return render_template('product_list.html', products=products, keyword=keyword,
                            user=get_user(), active='products')
-
-
 @app.route('/product/<int:pid>')
 def product_detail(pid):
     p = models.get_product(pid)
@@ -313,8 +281,6 @@ def product_detail(pid):
     fs = models.get_farmstay(p['farmstay_id'])
     return render_template('product_detail.html', p=p, traces=traces, fs=fs,
                            user=get_user(), active='products')
-
-
 @app.route('/trace', methods=['GET', 'POST'])
 def trace_query():
     """独立溯源码查询入口（游客可扫码/输码查看全程溯源）"""
@@ -334,8 +300,6 @@ def trace_query():
             flash('未找到该溯源码对应的商品，请核对后重试', 'warning')
     return render_template('trace.html', result=result, code=code, user=get_user(),
                            active='trace')
-
-
 @app.route('/product/order', methods=['POST'])
 @login_required
 def product_order():
@@ -352,8 +316,6 @@ def product_order():
                                      recv_address=recv_address)
     flash(f'订单提交成功！订单号：{no}（产地直供演示，不涉及真实支付）', 'success')
     return redirect(url_for('my_orders'))
-
-
 # ================= 购物车 =================
 @app.route('/cart')
 @login_required
@@ -361,8 +323,6 @@ def cart():
     items = models.get_cart(session['user_id'])
     total = sum((i['price'] or 0) * i['quantity'] for i in items if i['price'])
     return render_template('cart.html', items=items, total=total, user=get_user())
-
-
 @app.route('/cart/add', methods=['POST'])
 @login_required
 def cart_add():
@@ -371,8 +331,6 @@ def cart_add():
     models.add_cart(session['user_id'], pid, qty)
     flash('已加入购物车', 'success')
     return redirect(request.referrer or url_for('product_detail', pid=pid))
-
-
 @app.route('/cart/update', methods=['POST'])
 @login_required
 def cart_update():
@@ -380,16 +338,12 @@ def cart_update():
     qty = max(1, int(request.form.get('quantity', 1)))
     models.update_cart_qty(cid, qty)
     return redirect(url_for('cart'))
-
-
 @app.route('/cart/remove', methods=['POST'])
 @login_required
 def cart_remove():
     cid = int(request.form.get('cart_id'))
     models.remove_cart_item(cid)
     return redirect(url_for('cart'))
-
-
 @app.route('/cart/checkout', methods=['POST'])
 @login_required
 def cart_checkout():
@@ -414,8 +368,6 @@ def cart_checkout():
     models.clear_cart(session['user_id'])
     flash('结算成功，共生成 %d 个订单（产地直供演示，不涉及真实支付）' % len(no_list), 'success')
     return redirect(url_for('my_orders'))
-
-
 @app.route('/order/<int:oid>/cancel', methods=['POST'])
 @login_required
 def order_cancel(oid):
@@ -426,8 +378,6 @@ def order_cancel(oid):
     else:
         flash('订单不存在', 'danger')
     return redirect(url_for('my_orders'))
-
-
 @app.route('/order/<int:oid>/refund', methods=['POST'])
 @login_required
 def order_refund(oid):
@@ -439,8 +389,6 @@ def order_refund(oid):
     else:
         flash('请填写退款原因', 'danger')
     return redirect(url_for('my_orders'))
-
-
 @app.route('/merchant/order/cancel', methods=['POST'])
 @role_required(1)
 def merchant_order_cancel():
@@ -448,8 +396,6 @@ def merchant_order_cancel():
     models.cancel_product_order(oid)
     flash('订单已取消', 'success')
     return redirect(url_for('merchant_orders'))
-
-
 @app.route('/merchant/order/refund', methods=['POST'])
 @role_required(1)
 def merchant_order_refund():
@@ -458,8 +404,6 @@ def merchant_order_refund():
     models.process_refund_product_order(oid, approve=(action == 'approve'))
     flash('退款申请已处理' if action == 'approve' else '已驳回退款申请', 'success')
     return redirect(url_for('merchant_orders'))
-
-
 @app.route('/admin/order/refund', methods=['POST'])
 @role_required(3)
 def admin_order_refund():
@@ -468,16 +412,12 @@ def admin_order_refund():
     models.process_refund_product_order(oid, approve=(action == 'approve'))
     flash('退款申请已处理' if action == 'approve' else '已驳回退款申请', 'success')
     return redirect(url_for('admin_orders'))
-
-
 # ================= 系统公告 =================
 @app.route('/admin/notices')
 @role_required(3)
 def admin_notices():
     rows = models.list_notices()
     return render_template('admin/notices.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/notice/add', methods=['POST'])
 @role_required(3)
 def admin_notice_add():
@@ -489,8 +429,6 @@ def admin_notice_add():
     else:
         flash('请填写公告标题与内容', 'danger')
     return redirect(url_for('admin_notices'))
-
-
 @app.route('/admin/notice/delete', methods=['POST'])
 @role_required(3)
 def admin_notice_delete():
@@ -498,8 +436,6 @@ def admin_notice_delete():
     models.delete_notice(nid)
     flash('公告已删除', 'success')
     return redirect(url_for('admin_notices'))
-
-
 @app.route('/admin/notice/toggle', methods=['POST'])
 @role_required(3)
 def admin_notice_toggle():
@@ -507,8 +443,6 @@ def admin_notice_toggle():
     status = request.form.get('status', '启用')
     models.toggle_notice(nid, status)
     return redirect(url_for('admin_notices'))
-
-
 @app.route('/resources')
 def resource_list():
     rtype = request.args.get('rtype', '')
@@ -526,8 +460,6 @@ def resource_list():
     return render_template('resource_list.html', rows=rows, rtype=rtype,
                            keyword=keyword, region=region, region_opts=region_opts,
                            user=get_user(), active='resources')
-
-
 @app.route('/resource/<int:rid>')
 def resource_detail(rid):
     r = models.get_resource(rid)
@@ -540,8 +472,6 @@ def resource_detail(rid):
     nearby = [x for x in nearby if x['id'] != r['id']]
     return render_template('resource_detail.html', r=r, same=same, nearby=nearby,
                            user=get_user(), active='resources')
-
-
 @app.route('/resource/<int:rid>/intent', methods=['POST'])
 @login_required
 def resource_intent(rid):
@@ -549,8 +479,6 @@ def resource_intent(rid):
     models.add_resource_intent(rid, session['user_id'], message)
     flash('对接意向已提交，平台将协助您与发布者对接', 'success')
     return redirect(url_for('resource_detail', rid=rid))
-
-
 @app.route('/resource/publish', methods=['GET', 'POST'])
 @login_required
 def resource_publish():
@@ -569,8 +497,6 @@ def resource_publish():
             flash('资源发布成功！AI匹配已启用', 'success')
             return redirect(url_for('resource_list'))
     return render_template('resource_publish.html', user=get_user(), active='resources')
-
-
 @app.route('/resource/match', methods=['POST'])
 def resource_match():
     need = request.form.get('need', '').strip()
@@ -582,8 +508,6 @@ def resource_match():
     rows = models.list_resources(keyword=need)
     return render_template('resource_list.html', rows=rows, match_result=result,
                            need=need, user=get_user(), active='resources')
-
-
 @app.route('/ai_travel', methods=['GET', 'POST'])
 def ai_travel():
     import random
@@ -668,7 +592,6 @@ def ai_travel():
     spots = spots[:6]
     if hot is None and spots:
         hot = random.choice(spots)
-
     # 生成个性化AI行程：传入真实商户，让回答因输入、兴趣、商户而异（不千篇一律）
     if request.method == 'POST':
         result = ai_helper.travel_plan(user_input, picked, days, people, budget, interests, spots)
@@ -678,30 +601,22 @@ def ai_travel():
                            spots=spots, picked=picked, days=days, people=people,
                            budget=budget, interests=interests, hot=hot, quick=quick,
                            regions=regions, user=get_user(), active='ai')
-
-
 @app.route('/my/bookings')
 @login_required
 def my_bookings():
     rows = models.get_user_bookings(session['user_id'])
     return render_template('my_bookings.html', rows=rows, user=get_user(), active='bookings')
-
-
 @app.route('/booking/<int:bid>/cancel', methods=['POST'])
 @login_required
 def cancel_booking(bid):
     models.cancel_booking(bid, session['user_id'])
     flash('预约已取消', 'success')
     return redirect(url_for('my_bookings'))
-
-
 @app.route('/my/orders')
 @login_required
 def my_orders():
     rows = models.get_user_product_orders(session['user_id'])
     return render_template('my_orders.html', rows=rows, user=get_user(), active='orders')
-
-
 @app.route('/my/favorites')
 @login_required
 def my_favorites():
@@ -717,8 +632,6 @@ def my_favorites():
             if p:
                 items.append(('特产', p['name'], p['origin'], f'/product/{p["id"]}'))
     return render_template('my_favorites.html', items=items, user=get_user(), active='favorites')
-
-
 @app.route('/favorite', methods=['POST'])
 @login_required
 def favorite():
@@ -727,8 +640,6 @@ def favorite():
     added = models.toggle_favorite(session['user_id'], target_type, target_id)
     flash('已加入收藏' if added else '已取消收藏', 'success')
     return redirect(request.referrer or url_for('index'))
-
-
 @app.route('/my/reviews', methods=['GET', 'POST'])
 @login_required
 def my_reviews():
@@ -745,8 +656,6 @@ def my_reviews():
     farmstays = models.list_farmstays()
     return render_template('my_reviews.html', rows=mine, farmstays=farmstays,
                            user=get_user(), active='reviews')
-
-
 @app.route('/my/profile', methods=['GET', 'POST'])
 @login_required
 def my_profile():
@@ -776,10 +685,7 @@ def my_profile():
                            stats=stats, bookings=bookings, favorites=items,
                            reviews=mine, intents=intents,
                            tab=request.args.get('tab', 'bookings'))
-
-
 # ================= 商户端 =================
-
 @app.route('/merchant')
 @role_required(1)
 def merchant_dashboard():
@@ -795,8 +701,6 @@ def merchant_dashboard():
                            bookings=bookings[:5], user=get_user(),
                            order_stats=order_stats, booking_stats=booking_stats,
                            trend=trend)
-
-
 @app.route('/merchant/orders')
 @role_required(1)
 def merchant_orders():
@@ -804,8 +708,6 @@ def merchant_orders():
     import datetime
     now = (datetime.date.today() + datetime.timedelta(days=3)).strftime('%Y-%m-%d')
     return render_template('merchant/orders.html', rows=rows, user=get_user(), now=now)
-
-
 @app.route('/merchant/order/ship', methods=['POST'])
 @role_required(1)
 def merchant_order_ship():
@@ -816,8 +718,6 @@ def merchant_order_ship():
     models.ship_product_order(oid, company, tracking, arrival)
     flash('发货成功，物流轨迹已生成', 'success')
     return redirect(url_for('merchant_orders'))
-
-
 @app.route('/merchant/order/sign', methods=['POST'])
 @role_required(1)
 def merchant_order_sign():
@@ -825,15 +725,11 @@ def merchant_order_sign():
     models.sign_product_order(oid)
     flash('已标记签收', 'success')
     return redirect(url_for('merchant_orders'))
-
-
 @app.route('/admin/orders')
 @role_required(3)
 def admin_orders():
     rows = models.list_all_product_orders()
     return render_template('admin/orders.html', rows=rows, user=get_user())
-
-
 @app.route('/order/<int:oid>/logistics')
 @login_required
 def order_logistics(oid):
@@ -843,16 +739,12 @@ def order_logistics(oid):
         return redirect(url_for('my_orders'))
     tracks = models.get_logistics_tracks(oid)
     return render_template('logistics.html', order=order, tracks=tracks, user=get_user())
-
-
 @app.route('/merchant/shop')
 @role_required(1)
 def merchant_shop():
     user = get_user()
     farmstays = models.list_farmstays(merchant_id=user['id'])
     return render_template('merchant/shop.html', user=user, farmstays=farmstays)
-
-
 @app.route('/merchant/shop/save', methods=['POST'])
 @role_required(1)
 def merchant_shop_save():
@@ -864,8 +756,6 @@ def merchant_shop_save():
                        shop_address=shop_address, shop_desc=shop_desc, phone=phone)
     flash('店铺信息已保存', 'success')
     return redirect(url_for('merchant_shop'))
-
-
 @app.route('/merchant/add_farmstay', methods=['POST'])
 @role_required(1)
 def merchant_add_farmstay():
@@ -883,8 +773,6 @@ def merchant_add_farmstay():
                             price_min, tags, description)
         flash('农旅点位创建成功', 'success')
     return redirect(url_for('merchant_shop'))
-
-
 @app.route('/merchant/projects')
 @role_required(1)
 def merchant_projects():
@@ -896,8 +784,6 @@ def merchant_projects():
             projects.append({'pj': pj, 'fs': fs})
     return render_template('merchant/projects.html', projects=projects,
                            farmstays=farmstays, user=get_user())
-
-
 @app.route('/merchant/project/add', methods=['POST'])
 @role_required(1)
 def merchant_project_add():
@@ -912,8 +798,6 @@ def merchant_project_add():
     else:
         flash('请填写完整项目信息', 'danger')
     return redirect(url_for('merchant_projects'))
-
-
 @app.route('/merchant/project/update', methods=['POST'])
 @role_required(1)
 def merchant_project_update():
@@ -922,8 +806,6 @@ def merchant_project_update():
     models.update_project(pid, status=status)
     flash('项目状态已更新', 'success')
     return redirect(url_for('merchant_projects'))
-
-
 @app.route('/merchant/project/edit', methods=['POST'])
 @role_required(1)
 def merchant_project_edit():
@@ -941,8 +823,6 @@ def merchant_project_edit():
     else:
         flash('请填写完整项目信息', 'danger')
     return redirect(url_for('merchant_projects'))
-
-
 @app.route('/merchant/project/delete', methods=['POST'])
 @role_required(1)
 def merchant_project_delete():
@@ -950,8 +830,6 @@ def merchant_project_delete():
     models.delete_project(pid)
     flash('项目已删除', 'success')
     return redirect(url_for('merchant_projects'))
-
-
 @app.route('/merchant/rooms')
 @role_required(1)
 def merchant_rooms():
@@ -963,8 +841,6 @@ def merchant_rooms():
             rooms.append({'rm': rm, 'fs': fs})
     return render_template('merchant/rooms.html', rooms=rooms, farmstays=farmstays,
                            user=get_user())
-
-
 @app.route('/merchant/room/add', methods=['POST'])
 @role_required(1)
 def merchant_room_add():
@@ -977,8 +853,6 @@ def merchant_room_add():
         models.add_room(fid, name, beds, price, stock)
         flash('房型已添加', 'success')
     return redirect(url_for('merchant_rooms'))
-
-
 @app.route('/merchant/room/update', methods=['POST'])
 @role_required(1)
 def merchant_room_update():
@@ -987,8 +861,6 @@ def merchant_room_update():
     models.update_room(rid, status=status)
     flash('房型状态已更新', 'success')
     return redirect(url_for('merchant_rooms'))
-
-
 @app.route('/merchant/room/edit', methods=['POST'])
 @role_required(1)
 def merchant_room_edit():
@@ -1006,8 +878,6 @@ def merchant_room_edit():
     else:
         flash('请填写完整房型信息', 'danger')
     return redirect(url_for('merchant_rooms'))
-
-
 @app.route('/merchant/room/delete', methods=['POST'])
 @role_required(1)
 def merchant_room_delete():
@@ -1015,8 +885,6 @@ def merchant_room_delete():
     models.delete_room(rid)
     flash('房型已删除', 'success')
     return redirect(url_for('merchant_rooms'))
-
-
 @app.route('/merchant/products')
 @role_required(1)
 def merchant_products():
@@ -1028,8 +896,6 @@ def merchant_products():
             products.append({'pd': pd, 'fs': fs})
     return render_template('merchant/products.html', products=products,
                            farmstays=farmstays, user=get_user())
-
-
 @app.route('/merchant/product/add', methods=['POST'])
 @role_required(1)
 def merchant_product_add():
@@ -1054,8 +920,6 @@ def merchant_product_add():
     else:
         flash('请填写完整商品信息', 'danger')
     return redirect(url_for('merchant_products'))
-
-
 @app.route('/merchant/product/update', methods=['POST'])
 @role_required(1)
 def merchant_product_update():
@@ -1064,8 +928,6 @@ def merchant_product_update():
     models.update_product(pid, status=status)
     flash('商品状态已更新', 'success')
     return redirect(url_for('merchant_products'))
-
-
 @app.route('/merchant/product/edit', methods=['POST'])
 @role_required(1)
 def merchant_product_edit():
@@ -1086,8 +948,6 @@ def merchant_product_edit():
     else:
         flash('请填写完整商品信息', 'danger')
     return redirect(url_for('merchant_products'))
-
-
 @app.route('/merchant/product/delete', methods=['POST'])
 @role_required(1)
 def merchant_product_delete():
@@ -1095,8 +955,6 @@ def merchant_product_delete():
     models.delete_product(pid)
     flash('商品已删除', 'success')
     return redirect(url_for('merchant_products'))
-
-
 @app.route('/merchant/trace/add', methods=['POST'])
 @role_required(1)
 def merchant_trace_add():
@@ -1108,15 +966,11 @@ def merchant_trace_add():
         models.add_trace_record(pid, stage, location, detail, session['username'])
         flash('溯源记录已添加', 'success')
     return redirect(url_for('merchant_products'))
-
-
 @app.route('/merchant/bookings')
 @role_required(1)
 def merchant_bookings():
     rows = models.list_all_bookings(merchant_id=session['user_id'])
     return render_template('merchant/bookings.html', rows=rows, user=get_user())
-
-
 @app.route('/merchant/booking/update', methods=['POST'])
 @role_required(1)
 def merchant_booking_update():
@@ -1125,8 +979,6 @@ def merchant_booking_update():
     models.update_booking(bid, status=status)
     flash('预约状态已更新', 'success')
     return redirect(url_for('merchant_bookings'))
-
-
 @app.route('/merchant/reviews')
 @role_required(1)
 def merchant_reviews():
@@ -1137,8 +989,6 @@ def merchant_reviews():
     for fid in fids:
         rows += models.list_reviews(farmstay_id=fid)
     return render_template('merchant/reviews.html', rows=rows, user=get_user())
-
-
 @app.route('/merchant/review/reply', methods=['POST'])
 @role_required(1)
 def merchant_review_reply():
@@ -1147,8 +997,6 @@ def merchant_review_reply():
     models.update_review(rid, reply=reply)
     flash('回复已发布', 'success')
     return redirect(url_for('merchant_reviews'))
-
-
 @app.route('/merchant/ai', methods=['GET', 'POST'])
 @role_required(1)
 def merchant_ai():
@@ -1170,10 +1018,7 @@ def merchant_ai():
             if reviews:
                 result = ai_helper.review_analysis(reviews)
     return render_template('merchant/ai.html', result=result, user=get_user())
-
-
 # ================= 管理端 =================
-
 @app.route('/admin')
 @role_required(3)
 def admin_overview():
@@ -1195,15 +1040,11 @@ def admin_overview():
     return render_template('admin/overview.html', stats=stats, user=get_user(),
                            order_stats=order_stats, trend=trend, cat_stats=cats,
                            role_stats=roles, booking_stats=bstats)
-
-
 @app.route('/admin/merchants')
 @role_required(3)
 def admin_merchants():
     rows = models.list_users(role=1)
     return render_template('admin/merchants.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/merchant/audit', methods=['POST'])
 @role_required(3)
 def admin_merchant_audit():
@@ -1213,15 +1054,11 @@ def admin_merchant_audit():
     models.update_user(uid, status=status)
     flash('审核操作完成', 'success')
     return redirect(url_for('admin_merchants'))
-
-
 @app.route('/admin/farmstays')
 @role_required(3)
 def admin_farmstays():
     rows = models.list_all_admin_farmstays()
     return render_template('admin/farmstays.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/farmstay/update', methods=['POST'])
 @role_required(3)
 def admin_farmstay_update():
@@ -1230,8 +1067,6 @@ def admin_farmstay_update():
     models.update_farmstay(fid, status=status)
     flash('内容状态已更新', 'success')
     return redirect(url_for('admin_farmstays'))
-
-
 @app.route('/admin/farmstay/add', methods=['POST'])
 @role_required(3)
 def admin_farmstay_add():
@@ -1254,8 +1089,6 @@ def admin_farmstay_add():
                         tags, description, image=image)
     flash(f'点位「{name}」已新增', 'success')
     return redirect(url_for('admin_farmstays'))
-
-
 @app.route('/admin/farmstay/edit', methods=['POST'])
 @role_required(3)
 def admin_farmstay_edit():
@@ -1279,8 +1112,6 @@ def admin_farmstay_edit():
         status=request.form.get('status', '上架'))
     flash('点位信息已更新', 'success')
     return redirect(url_for('admin_farmstays'))
-
-
 @app.route('/admin/farmstay/delete', methods=['POST'])
 @role_required(3)
 def admin_farmstay_delete():
@@ -1288,15 +1119,11 @@ def admin_farmstay_delete():
     models.delete_farmstay(fid)
     flash('点位已删除', 'success')
     return redirect(url_for('admin_farmstays'))
-
-
 @app.route('/admin/products')
 @role_required(3)
 def admin_products():
     rows = models.list_products()
     return render_template('admin/products.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/product/update', methods=['POST'])
 @role_required(3)
 def admin_product_update():
@@ -1305,8 +1132,6 @@ def admin_product_update():
     models.update_product(pid, status=status)
     flash('商品状态已更新', 'success')
     return redirect(url_for('admin_products'))
-
-
 @app.route('/admin/product/add', methods=['POST'])
 @role_required(3)
 def admin_product_add():
@@ -1337,8 +1162,6 @@ def admin_product_add():
             pass
     flash(f'特产「{name}」已新增并生成溯源码', 'success')
     return redirect(url_for('admin_products'))
-
-
 @app.route('/admin/product/edit', methods=['POST'])
 @role_required(3)
 def admin_product_edit():
@@ -1360,8 +1183,6 @@ def admin_product_edit():
         status=request.form.get('status', '上架'))
     flash('特产信息已更新', 'success')
     return redirect(url_for('admin_products'))
-
-
 @app.route('/admin/product/delete', methods=['POST'])
 @role_required(3)
 def admin_product_delete():
@@ -1369,15 +1190,11 @@ def admin_product_delete():
     models.delete_product(pid)
     flash('特产已删除', 'success')
     return redirect(url_for('admin_products'))
-
-
 @app.route('/admin/users')
 @role_required(3)
 def admin_users():
     rows = models.list_users()
     return render_template('admin/users.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/user/update', methods=['POST'])
 @role_required(3)
 def admin_user_update():
@@ -1386,8 +1203,6 @@ def admin_user_update():
     models.update_user(uid, status=status)
     flash('账号状态已更新', 'success')
     return redirect(url_for('admin_users'))
-
-
 @app.route('/admin/user/create', methods=['POST'])
 @role_required(3)
 def admin_user_create():
@@ -1399,15 +1214,11 @@ def admin_user_create():
         ok = models.create_user(username, password, role=role, region=region)
         flash('管理员账号创建成功' if ok else '用户名已存在', 'success' if ok else 'danger')
     return redirect(url_for('admin_users'))
-
-
 @app.route('/admin/reviews')
 @role_required(3)
 def admin_reviews():
     rows = models.list_reviews()
     return render_template('admin/reviews.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/review/update', methods=['POST'])
 @role_required(3)
 def admin_review_update():
@@ -1416,8 +1227,6 @@ def admin_review_update():
     models.update_review(rid, status=status)
     flash('评价状态已更新', 'success')
     return redirect(url_for('admin_reviews'))
-
-
 @app.route('/admin/banners', methods=['GET', 'POST'])
 @role_required(3)
 def admin_banners():
@@ -1431,8 +1240,6 @@ def admin_banners():
         return redirect(url_for('admin_banners'))
     rows = models.list_banners()
     return render_template('admin/banners.html', rows=rows, user=get_user())
-
-
 @app.route('/admin/audit_ai', methods=['POST'])
 @role_required(3)
 def admin_audit_ai():
@@ -1440,10 +1247,7 @@ def admin_audit_ai():
     result = ai_helper.content_check(text) if text else '请输入待检测内容'
     flash('AI 检测结果：' + result, 'success')
     return redirect(url_for('admin_reviews'))
-
-
 # ================= 启动 =================
-
 if __name__ == '__main__':
     if not os.path.exists(models.DB_PATH):
         models.init_db()
