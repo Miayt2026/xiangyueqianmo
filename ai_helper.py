@@ -110,13 +110,24 @@ def month_season(month):
 
 # ================= 1. AI 出行规划助手（参数化，参考图3/4） =================
 
-def travel_plan(user_input='', region='不限', days=2, people=2, budget=0, interests=None):
+def travel_plan(user_input='', region='不限', days=2, people=2, budget=0, interests=None, spots=None):
     interests = interests or []
+    if spots:
+        spots = [dict(s) if not isinstance(s, dict) else s for s in spots]
     system = ('你是"乡约阡陌"平台的AI乡村出行规划师。根据游客的需求、地区、天数、人数、预算与兴趣偏好，'
-              '输出一份简洁实用的乡村出行方案：①推荐平台入驻商户与项目 ②按天编排参考行程(每天上午/下午/晚上) '
-              '③人均参考价 ④注意事项。用中文，分段清晰，语气亲切，只推荐真实存在的平台商户与项目，不编造。')
-    local = local_travel_plan(user_input, region, days, people, budget, interests)
-    llm = _call_llm(system, f'需求：{user_input}\n地区：{region}\n天数：{days}天\n人数：{people}人\n人均预算：{budget}元\n兴趣：{interests}')
+              '输出一份简洁实用、个性化、与游客需求强相关的乡村出行方案：①推荐平台入驻商户与项目 '
+              '②按天编排参考行程(每天上午/下午/晚上) ③人均参考价 ④注意事项。用中文，分段清晰，语气亲切，'
+              '只推荐真实存在的平台商户与项目，不编造。每次请结合游客的具体需求给出不同的方案，不要千篇一律。')
+    context = (f'需求：{user_input}\n地区：{region}\n天数：{days}天\n人数：{people}人\n'
+               f'人均预算：{budget}元\n兴趣：{interests}')
+    if spots:
+        lines = []
+        for s in spots[:5]:
+            lines.append(f"{s.get('name','')}({s.get('region','')})，类型:{s.get('category','')}，"
+                         f"价格:{s.get('price_min',0)}元起，标签:{s.get('tags','')}")
+        context += '\n平台可推荐商户：\n' + '\n'.join(lines)
+    local = local_travel_plan(user_input, region, days, people, budget, interests, spots)
+    llm = _call_llm(system, context)
     return llm if llm else local
 
 
@@ -141,31 +152,91 @@ def _interest_categories(interests):
     return cat, kw
 
 
-def local_travel_plan(user_input='', region='不限', days=2, people=2, budget=0, interests=None):
+def local_travel_plan(user_input='', region='不限', days=2, people=2, budget=0, interests=None, spots=None):
+    import random
     interests = interests or []
-    cat, kw = _interest_categories(interests)
+    if spots:
+        spots = [dict(s) if not isinstance(s, dict) else s for s in spots]
+    # 兴趣对应的活动组合池（保证不同兴趣生成不同内容）
+    pools = {
+        '采摘': ('果园现摘+时令水果尝鲜', '农家宴+自采蔬果', '山景民宿休憩'),
+        '亲子': ('亲子农耕研学+小动物喂养', '亲子农事课堂+农家午餐', '亲子家庭房住宿'),
+        '研学': ('田间课堂/非遗研学体验', '研学实践+农家特色餐', '研学主题民宿'),
+        '团建': ('团队农事挑战+户外拓展', '农家长桌宴+游戏互动', '团建民宿包场'),
+        '民宿': ('院落休闲+观景漫步', '农家特色正餐', '精品山景民宿'),
+        '非遗': ('非遗工坊手作体验', '非遗传承人讲解+午餐', '非遗主题院落住宿'),
+        '美食': ('时令采购/现摘食材', '农家土菜宴+招牌菜', '民宿住宿'),
+        '康养': ('晨间太极/慢步养生', '养生农家宴', '康养民宿'),
+        '星空': ('白天农事/田园观光', '傍晚观星准备', '星空露营观星'),
+        '露营': ('营地搭建+农事体验', '田园野餐', '星空露营'),
+        '草原': ('草原骑马/放牧体验', '草原风味餐', '草原蒙古包'),
+        '梯田': ('梯田晨景+农事', '乡野农家餐', '梯田观景民宿'),
+        '古镇': ('古镇街巷漫步', '古镇特色小吃', '古镇客栈住宿'),
+        '山水': ('山水徒步/泛舟', '湖畔/山间农家餐', '山水景民宿'),
+    }
+    used = []
+    for it in interests:
+        if it in pools and it not in used:
+            used.append(it)
+
+    def pick(arr):
+        return arr[random.randrange(len(arr))]
+
+    # 预算档位
+    if budget and budget > 0:
+        per = max(budget // max(days, 1), 1)
+        if per >= 300:
+            tier, tier_note = '品质轻奢游', f'人均约¥{per}/天'
+        elif per >= 150:
+            tier, tier_note = '舒适精品游', f'人均约¥{per}/天'
+        else:
+            tier, tier_note = '经济实惠游', f'人均约¥{per}/天'
+    else:
+        tier, tier_note = '自由灵活游', '人均自定'
+
+    plan = f'【AI出行规划 · {region} · {days}天{people}人】\n'
+    plan += f'根据您的需求"{user_input or "乡村农旅"}"（兴趣：{", ".join(interests) or "不限"}），为您定制：\n'
+    plan += f'行程定位：{tier} ｜ 建议{people}人{days}天 ｜ {tier_note}\n'
+    for d in range(1, days + 1):
+        if used:
+            it = used[(d - 1) % len(used)]
+            a, b, c = pools[it]
+            plan += f'第{d}天：上午 {a}；下午 {b}；晚上 {c}\n'
+        else:
+            plan += (f'第{d}天：上午 {pick(["乡村采摘/农耕体验","山间徒步/田园观光","非遗工坊手作","农事研学课堂"])}；'
+                     f'下午 {pick(["农家餐饮+特产选购（支持产地溯源）","山景民宿午歇+茶叙","亲子互动/团队活动"])}；'
+                     f'晚上 {pick(["山景民宿/特色小院住宿","星空露营+篝火夜话","农家晚宴+乡土小剧场"])}\n')
+    # 融入真实商户，让推荐更落地、每次不同
+    if spots:
+        s0 = spots[random.randrange(len(spots))]
+        plan += f'推荐点位：{s0["name"]}（{s0.get("region","")}，¥{s0.get("price_min",0) or "面议"}起/人，{s0.get("tags","") or s0.get("category","")}）\n'
+        if len(spots) > 1:
+            s1 = spots[random.randrange(len(spots))]
+            plan += f'顺路可访：{s1["name"]}，体验{s1.get("tags","") or s1.get("category","")}项目\n'
+    plan += '特别提醒：\n' + '\n'.join(f'  - {t}' for t in _tips(interests, user_input)[:3])
+    plan += '\n以上项目均来自平台真实入驻商户，可在详情页直接预约确认。'
+    return plan
+
+
+def _tips(interests, user_input):
+    import re
+    interests = interests or []
     tips = []
-    if '亲子' in interests or re.search(r'亲子|孩子|带娃', user_input):
+    if '亲子' in interests or re.search(r'亲子|孩子|带娃', user_input or ''):
         tips.append('推荐农耕研学、采摘类项目，孩子参与感强；注意防晒补水，带替换衣物。')
     if '非遗' in interests:
-        tips.append('非遗工坊手作体验建议提前1天预约，成品可现场带走或邮寄。')
-    if '美食' in interests or re.search(r'吃|美食|农家菜', user_input):
+        tips.append('非遗工坊手作建议提前1天预约，成品可现场带走或邮寄。')
+    if '美食' in interests or re.search(r'吃|美食|农家菜', user_input or ''):
         tips.append('农家宴按人计价，提前电话确认菜品与时价。')
     if '星空' in interests or '露营' in interests:
         tips.append('山区昼夜温差大，露营/观星记得带薄外套和防潮垫。')
     if '团建' in interests:
         tips.append('团队体验建议提前一周预约，确认接待人数上限。')
+    if '采摘' in interests:
+        tips.append('采摘季节性强，出行前电话确认当季可采品种与价格。')
     if not tips:
         tips.append('经典组合：半日采摘 + 农家餐饮 + 山景民宿；出行前电话确认营业状态。')
-
-    plan = f'【AI出行规划 · {region} · {days}天{people}人】\n'
-    plan += f'根据您的需求"{user_input or "乡村农旅"}"（人均{budget}元内，兴趣：{", ".join(interests) or "不限"}），为您推荐：\n'
-    plan += f'建议安排 {days}天{people}人 乡村之旅（人均约 {budget or "自定"} 元）\n'
-    for d in range(1, days + 1):
-        plan += f'第{d}天：上午 乡村采摘/农耕体验；下午 农家餐饮+特产选购（支持产地溯源）；晚上 山景民宿/特色小院住宿\n'
-    plan += '特别提醒：\n' + '\n'.join(f'  - {t}' for t in tips[:3])
-    plan += '\n以上项目均来自平台真实入驻商户，可在详情页直接预约确认。'
-    return plan
+    return tips
 
 
 # ================= 2. 农旅点单点攻略（需求①：项目内AI规划） =================

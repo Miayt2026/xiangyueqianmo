@@ -163,6 +163,26 @@ def index():
                            notices=notices, active='home')
 
 
+@app.route('/notices')
+def notices_page():
+    rows = models.list_notices('启用')
+    grouped = {}
+    for r in rows:
+        grouped.setdefault(r['category'] or '平台通知', []).append(r)
+    order = ['农旅活动', '政策公告', '平台通知']
+    order = [c for c in order if c in grouped] + [c for c in grouped if c not in order]
+    contacts = {
+        'hotline': '400-888-1234',
+        'email': 'service@xiangyueqianmo.com',
+        'address': '北京市海淀区中关村乡村数字化产业园2号楼',
+        'hours': '周一至周日 9:00 - 21:00',
+        'cooperate_hotline': '400-888-5678',
+        'cooperate_email': 'cooperate@xiangyueqianmo.com',
+    }
+    return render_template('notices.html', grouped=grouped, order=order, rows=rows,
+                           contacts=contacts, user=get_user(), active='notices')
+
+
 @app.route('/farmstays')
 def farmstay_list():
     region = request.args.get('region', '')
@@ -621,7 +641,6 @@ def ai_travel():
                        '梯田', '美食', '康养', '星空', '露营', '古镇', '山水']:
                 if it in user_input and it not in interests:
                     interests.append(it)
-        result = ai_helper.travel_plan(user_input, picked, days, people, budget, interests)
     # 按地区+预算+兴趣推荐真实商户（去AI味：只推平台登记商户）
     spots = models.list_farmstays(region=picked if picked != '不限' else '')
     _cat_map = {'采摘': '采摘体验', '研学': '农耕研学', '民宿': '农家住宿',
@@ -649,6 +668,10 @@ def ai_travel():
     spots = spots[:6]
     if hot is None and spots:
         hot = random.choice(spots)
+
+    # 生成个性化AI行程：传入真实商户，让回答因输入、兴趣、商户而异（不千篇一律）
+    if request.method == 'POST':
+        result = ai_helper.travel_plan(user_input, picked, days, people, budget, interests, spots)
     regions_all = [r['region'].split('-')[0] for r in models.list_farmstays() if r['region']]
     regions = sorted(set(regions_all))
     return render_template('ai_travel.html', result=result, user_input=user_input,
