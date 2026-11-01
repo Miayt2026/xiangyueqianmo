@@ -15,7 +15,7 @@
 </div>
 <div style="padding:6px 22px 18px;">
 {% for n in notices[:4] %}
-<a href="/farmstays" style="display:block;text-decoration:none;padding:14px 0;border-bottom:1px dashed #e5ede7;">
+<a href="/notices" style="display:block;text-decoration:none;padding:14px 0;border-bottom:1px dashed #e5ede7;">
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 <span style="background:#eaf7ef;color:#1e8a4a;font-size:12px;font-weight:700;border-radius:6px;padding:2px 10px;">{{ n['category'] or '农旅活动' }}</span>
 <span style="font-size:13px;font-weight:700;color:#22332b;">{{ n['title'] }}</span>
@@ -26,7 +26,7 @@
 {% endfor %}
 </div>
 <div style="padding:0 22px 20px;">
-<a href="/farmstays" class="btn btn-primary btn-block" style="text-decoration:none;">去逛逛乡村好去处</a>
+<a href="/notices" class="btn btn-primary btn-block" style="text-decoration:none;">查看全部公告</a>
 </div>
 </div>
 </div>
@@ -45,6 +45,10 @@
 function closeNoticeModal(){
   var m = document.getElementById('noticeModal');
   if (m) m.style.display = 'none';
+}
+function openNoticeModal(){
+  var m = document.getElementById('noticeModal');
+  if (m) m.style.display = 'flex';
 }
 </script>
 {% endif %}
@@ -114,7 +118,7 @@ alt="{{ b['title'] }}" onerror="this.src='{{ url_for('static', filename='images/
 <div style="font-size:13px;color:var(--text2);margin-top:2px;">{{ n['content'] }}</div>
 {% endfor %}
 </div>
-<a href="/farmstays" style="font-size:13px;color:var(--green);flex-shrink:0;font-weight:600;">了解更多 →</a>
+<a href="/notices" style="font-size:13px;color:var(--green);flex-shrink:0;font-weight:600;">了解更多 →</a>
 </div>
 {% endif %}
 
